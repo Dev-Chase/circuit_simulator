@@ -1,0 +1,149 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/clang",
+      "-Iinclude",
+      "-Iinclude/constants",
+      "-Iinclude/simulation",
+      "-Iinclude/libs",
+      "-Iinclude/components",
+      "-std=c11",
+      "-g",
+      "-Wall",
+      "-Wextra",
+      "-c",
+      "-o",
+      "obj/main.o",
+      "src/main.c"
+    ],
+    "directory": "/Users/chase/Coding/C/raylib-projects/circuit_simulator",
+    "file": "/Users/chase/Coding/C/raylib-projects/circuit_simulator/src/main.c",
+    "output": "/Users/chase/Coding/C/raylib-projects/circuit_simulator/obj/main.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang",
+      "-Iinclude",
+      "-Iinclude/constants",
+      "-Iinclude/simulation",
+      "-Iinclude/libs",
+      "-Iinclude/components",
+      "-std=c11",
+      "-g",
+      "-Wall",
+      "-Wextra",
+      "-c",
+      "-o",
+      "obj/simulation/action.o",
+      "src/simulation/action.c"
+    ],
+    "directory": "/Users/chase/Coding/C/raylib-projects/circuit_simulator",
+    "file": "/Users/chase/Coding/C/raylib-projects/circuit_simulator/src/simulation/action.c",
+    "output": "/Users/chase/Coding/C/raylib-projects/circuit_simulator/obj/simulation/action.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang",
+      "-Iinclude",
+      "-Iinclude/constants",
+      "-Iinclude/simulation",
+      "-Iinclude/libs",
+      "-Iinclude/components",
+      "-std=c11",
+      "-g",
+      "-Wall",
+      "-Wextra",
+      "-c",
+      "-o",
+      "obj/simulation/button.o",
+      "src/simulation/button.c"
+    ],
+    "directory": "/Users/chase/Coding/C/raylib-projects/circuit_simulator",
+    "file": "/Users/chase/Coding/C/raylib-projects/circuit_simulator/src/simulation/button.c",
+    "output": "/Users/chase/Coding/C/raylib-projects/circuit_simulator/obj/simulation/button.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang",
+      "-Iinclude",
+      "-Iinclude/constants",
+      "-Iinclude/simulation",
+      "-Iinclude/libs",
+      "-Iinclude/components",
+      "-std=c11",
+      "-g",
+      "-Wall",
+      "-Wextra",
+      "-c",
+      "-o",
+      "obj/simulation/simulation.o",
+      "src/simulation/simulation.c"
+    ],
+    "directory": "/Users/chase/Coding/C/raylib-projects/circuit_simulator",
+    "file": "/Users/chase/Coding/C/raylib-projects/circuit_simulator/src/simulation/simulation.c",
+    "output": "/Users/chase/Coding/C/raylib-projects/circuit_simulator/obj/simulation/simulation.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang",
+      "-Iinclude",
+      "-Iinclude/constants",
+      "-Iinclude/simulation",
+      "-Iinclude/libs",
+      "-Iinclude/components",
+      "-std=c11",
+      "-g",
+      "-Wall",
+      "-Wextra",
+      "-c",
+      "-o",
+      "obj/simulation/actions/new.o",
+      "src/simulation/actions/new.c"
+    ],
+    "directory": "/Users/chase/Coding/C/raylib-projects/circuit_simulator",
+    "file": "/Users/chase/Coding/C/raylib-projects/circuit_simulator/src/simulation/actions/new.c",
+    "output": "/Users/chase/Coding/C/raylib-projects/circuit_simulator/obj/simulation/actions/new.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang",
+      "-Iinclude",
+      "-Iinclude/constants",
+      "-Iinclude/simulation",
+      "-Iinclude/libs",
+      "-Iinclude/components",
+      "-std=c11",
+      "-g",
+      "-Wall",
+      "-Wextra",
+      "-c",
+      "-o",
+      "obj/components/circuit.o",
+      "src/components/circuit.c"
+    ],
+    "directory": "/Users/chase/Coding/C/raylib-projects/circuit_simulator",
+    "file": "/Users/chase/Coding/C/raylib-projects/circuit_simulator/src/components/circuit.c",
+    "output": "/Users/chase/Coding/C/raylib-projects/circuit_simulator/obj/components/circuit.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang",
+      "-Iinclude",
+      "-Iinclude/constants",
+      "-Iinclude/simulation",
+      "-Iinclude/libs",
+      "-Iinclude/components",
+      "-std=c11",
+      "-g",
+      "-Wall",
+      "-Wextra",
+      "-c",
+      "-o",
+      "obj/components/wire.o",
+      "src/components/wire.c"
+    ],
+    "directory": "/Users/chase/Coding/C/raylib-projects/circuit_simulator",
+    "file": "/Users/chase/Coding/C/raylib-projects/circuit_simulator/src/components/wire.c",
+    "output": "/Users/chase/Coding/C/raylib-projects/circuit_simulator/obj/components/wire.o"
+  }
+]
