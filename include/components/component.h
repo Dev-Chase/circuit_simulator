@@ -23,14 +23,15 @@ typedef struct Component {
 	void *ptr;
 
 	// Data Manipulation
-	void (*add_data)(const Component *self, const void *const DATA);
+	void (*add_data)(const Component *self, const void *const DATA, size_t size);
 	void (*del_data)(const Component *self, size_t ind);
 	void (*clear)(const Component *self);
 	void (*free)(const Component *self);
 
-	// Other Functions
+	// Action Functions
 	void (*save)(const Component *const SELF, const char *path);
 	void (*run)(const Component *self); // sets ends
+	void (*place)(Component *self, Vector2 grid_pos);
 
 	// Rendering
 	void (*render)(const Component *const SELF);

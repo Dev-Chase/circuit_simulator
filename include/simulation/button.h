@@ -19,8 +19,8 @@ extern "C" {
 #define BTN_CORNER_SEGMENTS 25
 
 // Defaults
-#define TRANS_GREEN (Color){0, 228, 48, 150}
-#define TRANS_RED (Color){230, 41, 55, 150}
+#define TRANS_GREEN (Color){0, 228, 48, 180}
+#define TRANS_RED (Color){230, 41, 55, 190}
 
 typedef struct Button {
 	const char *txt;

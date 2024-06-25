@@ -13,14 +13,14 @@ typedef struct Action Action;
 
 typedef bool (*ShortcutConditionFn)(void);
 typedef void (*ActionRenderFn)(const Action *const);
-typedef void (*ActionUpdateFn)(const Simulation *, Action *);
+typedef void (*ActionUpdateFn)(Simulation *, Action *);
 
 struct Action {
-	void *data;
-	Button *button;
-	ShortcutConditionFn shortcut_cond;
-	const ActionRenderFn RENDER_FN;
-	const ActionUpdateFn UPDATE_FN;
+  void *data;
+  Button *button;
+  ShortcutConditionFn shortcut_cond;
+  const ActionRenderFn RENDER_FN;
+  const ActionUpdateFn UPDATE_FN;
 };
 
 void action_init(Action action[static 1], size_t data_size);
