@@ -2,6 +2,7 @@
 #define UTILS_H
 
 #include "constants.h"
+#include <math.h>
 
 #ifdef _cplusplus
 extern "C" {
@@ -14,11 +15,15 @@ extern "C" {
 #define GRID_VAL_TO_COORD(val) val *BLOCK_SIZE
 #define GRID_TO_COORD(i, j) VECTOR2(i *BLOCK_SIZE, j *BLOCK_SIZE)
 #define GRID_VEC_TO_COORD(vec) VECTOR2(vec.x *BLOCK_SIZE, vec.y *BLOCK_SIZE)
-#define COORD_VAL_TO_GRID(val) (int)round(val / BLOCK_SIZE)
-#define COORD_TO_GRID(x, y)                                                    \
-  VECTOR2((int)round(x / BLOCK_SIZE), (int)round(y / BLOCK_SIZE))
+
+#define COORD_VAL_TO_GRID(val) (float)((int)round(val / BLOCK_SIZE))
+#define COORD_TO_GRID(x, y) VECTOR2(COORD_VAL_TO_GRID(x), COORD_VAL_TO_GRID(y))
 #define COORD_VEC_TO_GRID(vec)                                                 \
-  VECTOR2((int)round(vec.x / BLOCK_SIZE), (int)round(vec.y / BLOCK_SIZE))
+  VECTOR2(COORD_VAL_TO_GRID(vec.x), COORD_VAL_TO_GRID(vec.y))
+
+#define CLOSEST_GRID_FROM_MOUSE_POS                                            \
+  VEC2(GRID_VAL_TO_COORD(COORD_VAL_TO_GRID(GetMouseX())),                      \
+       GRID_VAL_TO_COORD(COORD_VAL_TO_GRID(GetMouseY())))
 
 #ifdef _cplusplus
 }

@@ -1,3 +1,6 @@
+# OS Specifics
+UNAME_S := $(shell uname -s)
+
 # Folders
 INCLUDE :=  include
 OBJ :=  obj
@@ -16,6 +19,8 @@ FIXPATH = $(subst /,\,$1)
 RM			:= del /q /f
 RMRF 		:= rmdir /s /q
 MD	:= mkdir
+
+STATIC_LIB_EXTENSION :=lib
 else
 MAIN	:= main
 SRCDIRS	:= $(shell find $(SRC) -type d)
@@ -26,6 +31,7 @@ FIXPATH = $1
 RM = rm -f
 RMRF := rm -rf
 MD	:= mkdir -p
+STATIC_LIB_EXTENSION :=a
 endif
 
 # Names
@@ -41,14 +47,20 @@ FRAMEWORKS := -framework CoreVideo -framework IOKit -framework Cocoa -framework 
 CFLAGS := $(INCLUDES_FLAG) -std=$(STD) -g -Wall -Wextra
 RELEASEFLAGS := $(INCLDUES_FLAG) -std=$(STD) -Wall -Wextra -O2 -DNDEBUG
 
+# Dependencies
+LIB_DEPENDENCIES := $(LIB)/libraylib.$(STATIC_LIB_EXTENSION)
+
 # Files
 LIBS := $(wildcard $(patsubst %,%/*, $(LIBDIRS)))
 INCLUDES := $(wildcard $(patsubst %,%/*, $(INCLUDEDIRS)))
 SRCS := $(wildcard $(patsubst %,%/*.c,$(SRCDIRS)))
 OBJS := $(patsubst $(SRC)%,$(OBJ)%,$(SRCS:.c=.o))
 
-all: $(BIN) $(MAIN_BIN)
+all: $(BIN) $(MAIN_BIN) $(LIB_DEPENDENCIES)
 	@echo Executing 'all' complete
+
+$(LIB_DEPENDENCIES):
+	@echo Missing Following Libraries: $(LIB_DEPENDENCIES), please install
 
 $(BIN):
 	$(MD) $(BIN)

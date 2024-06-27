@@ -20,7 +20,7 @@ static bool new_action_shortcut(void) {
 static void new_action_update(Simulation simulation[static 1],
                               Action new_action[static 1]) {
   if (action_activated(new_action)) {
-    circuit_clear(&simulation->circuit.this_component);
+    circuit_clear(&simulation->circuit);
     puts("Circuit Cleared");
   }
 }

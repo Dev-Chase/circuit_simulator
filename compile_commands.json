@@ -118,6 +118,27 @@
       "-Wextra",
       "-c",
       "-o",
+      "obj/simulation/actions/place.o",
+      "src/simulation/actions/place.c"
+    ],
+    "directory": "/Users/chase/Coding/C/raylib-projects/circuit_simulator",
+    "file": "/Users/chase/Coding/C/raylib-projects/circuit_simulator/src/simulation/actions/place.c",
+    "output": "/Users/chase/Coding/C/raylib-projects/circuit_simulator/obj/simulation/actions/place.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang",
+      "-Iinclude",
+      "-Iinclude/constants",
+      "-Iinclude/simulation",
+      "-Iinclude/libs",
+      "-Iinclude/components",
+      "-std=c11",
+      "-g",
+      "-Wall",
+      "-Wextra",
+      "-c",
+      "-o",
       "obj/simulation/actions/run.o",
       "src/simulation/actions/run.c"
     ],

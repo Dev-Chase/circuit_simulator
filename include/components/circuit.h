@@ -10,26 +10,24 @@ extern "C" {
 
 typedef struct Circuit {
   const char *path;
-  Component this_component;
   Component *components;
-  void *component_data; // NOTE: stored as data_size, then data
-  size_t component_data_size;
   size_t components_len;
-  size_t components_capacity;
+  size_t components_capacity; // in number of components
   Vector2 pos;
-  //TODO: add draw data and implement rendering for imported circuits vs open circuit
+  // TODO: add draw data and implement rendering for imported circuits vs open
+  // circuit
 } Circuit;
 
-void circuit_fill_new(Circuit circuit[static 1], const char *path);
+Component circuit_new(const char *path);
 
 /** Component Interface */
 // Data Manipulation
 void circuit_add_component(const Component circuit_component[static 1],
-                           const void *COMPONENT, size_t size);
+                           const void *COMPONENT);
 void circuit_del_component(const Component circuit_component[static 1],
                            size_t ind);
 void circuit_clear(const Component circuit_component[static 1]);
-void circuit_free(const Component circuit_component[static 1]);
+void circuit_free(Component circuit_component[static 1]);
 
 // Action Functions
 void circuit_save(const Component circuit_component[static 1],

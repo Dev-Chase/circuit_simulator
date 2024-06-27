@@ -17,11 +17,10 @@ Simulation simulation_new(void) {
                 run_action_init(),
                 place_action_init(),
             },
-        .active_component = calloc(1, sizeof(Component)),
-        .circuit = {0},
+        .active_component = {0},
+        .circuit = circuit_new(NULL),
         .running = false,
     };
-    circuit_fill_new(&simulation.circuit, NULL);
   } else {
     perror("initialized Simulation type (simulation_new) twice whilst "
            "Simulation is supposed to "
@@ -42,21 +41,15 @@ void simulation_render(const Simulation simulation[static 1]) {
     action_render(simulation->actions[i]);
   }
 
-  for (size_t i = 0; i < simulation->circuit.components_len; i++) {
-    COMPONENT_FN(simulation->circuit.components[i], render)
+  Circuit *circuit = (Circuit *)simulation->circuit.ptr;
+  for (size_t i = 0; i < circuit->components_len; i++) {
+    COMPONENT_FN(circuit->components[i], render)
   }
-
-  // TODO: switch with open circuit render in order to properly seperate circuit
-  // component function and simulation render function
-  COMPONENT_FN(simulation->circuit.this_component, render)
+  COMPONENT_FN(simulation->active_component, render)
 }
 
 void simulation_free(Simulation simulation[static 1]) {
-  free(simulation->active_component);
-#ifndef NDEBUG
-  simulation->active_component = NULL;
-#endif
-
+  COMPONENT_FN(simulation->circuit, free)
   for (size_t i = 0; i < N_ACTIONS; i++) {
     action_free(simulation->actions[i]);
   }

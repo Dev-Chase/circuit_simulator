@@ -19,6 +19,7 @@ void draw_grid(void) {
 int main(void) {
 	// Initializing Window & Camera
 	InitWindow(WIDTH, HEIGHT, WIN_NAME);
+	SetExitKey(KEY_NULL); // Disable Escape Quitting Window
 	SetTargetFPS(FPS);
 
 	// Simulation State

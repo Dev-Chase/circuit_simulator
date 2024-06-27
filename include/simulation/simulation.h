@@ -18,8 +18,8 @@ Action *place_action_init(void);
 
 typedef struct Simulation {
   Action *actions[N_ACTIONS];
-  Circuit circuit;
-  Component *active_component;
+  Component circuit;
+  Component active_component;
   bool running; //TODO: implement
 } Simulation;
 
