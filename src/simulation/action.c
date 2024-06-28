@@ -17,13 +17,15 @@ void action_init(Action action[static 1], size_t data_size) {
 #endif
 }
 
-bool action_activated(Action action[static 1]) {
+bool action_activated(Simulation simulation[static 1],
+                      Action action[static 1]) {
   bool button_event =
       (action->button) ? button_is_clicked(action->button) : false;
   bool shortcut_event =
       (action->shortcut_cond) ? action->shortcut_cond() : false;
 
-  return button_event || shortcut_event;
+  return (button_event || shortcut_event) &&
+         !simulation_other_action_active(simulation, action);
 }
 
 void action_update(Simulation *simulation, Action action[static 1]) {
@@ -32,13 +34,14 @@ void action_update(Simulation *simulation, Action action[static 1]) {
   }
 }
 
-void action_render(const Action action[static 1]) {
+void action_render(const Simulation *const SIMULATION,
+                   const Action action[static 1]) {
   if (action->button && action->button->txt) {
     button_render(action->button);
   }
 
   if (action->RENDER_FN) {
-    action->RENDER_FN(action);
+    action->RENDER_FN(SIMULATION, action);
   }
 }
 

@@ -20,7 +20,7 @@ static bool new_action_shortcut(void) {
 
 static void new_action_update(Simulation simulation[static 1],
                               Action new_action[static 1]) {
-  if (action_activated(new_action)) {
+  if (action_activated(simulation, new_action)) {
     circuit_clear(&simulation->circuit);
     puts("Circuit Cleared");
   }
@@ -36,6 +36,7 @@ static Button NEW_BUTTON = {
 
 static Action NEW_ACTION = {
     .data = NULL,
+    .active = false,
     .button = &NEW_BUTTON,
     .shortcut_cond = new_action_shortcut,
     .UPDATE_FN = new_action_update,
@@ -44,7 +45,7 @@ static Action NEW_ACTION = {
 
 Action *new_action_init(void) {
   // #ifndef NDEBUG
-  action_init(&NEW_ACTION, 0);
+  // action_init(&NEW_ACTION, 0);
   // #endif
   return &NEW_ACTION;
 }

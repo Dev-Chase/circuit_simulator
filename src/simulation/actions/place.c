@@ -49,7 +49,8 @@ static void add_placement(Simulation simulation[static 1],
   Vector2 point = CLOSEST_VALID_GRID_VEC_FROM_MOUSE_POS;
   printf("Point: {%f, %f}\n", point.x, point.y);
   Wire *wire = (Wire *)simulation->active_component.ptr;
-  if (wire_contains_point(wire, point, true)) {
+  Vector2 last_point = wire->points[wire_last_i(wire)];
+  if (point.x == last_point.x && point.y == last_point.y) {
     place_active_component(simulation, place_action);
     return;
   }
@@ -66,6 +67,9 @@ static void start_placement(Simulation simulation[static 1],
     *(PlaceMode *)place_action->data = Creating;
     puts("Making new wire");
     simulation->active_component = wire_new(WIRE_COLOUR);
+    Wire *wire = (Wire *)simulation->active_component.ptr;
+    wire->is_last_set = true;
+
     add_placement(simulation, place_action);
   } else {
     *(PlaceMode *)place_action->data = Positioning;
@@ -84,7 +88,7 @@ void cancel_active_component(Simulation simulation[static 1],
 
 static void place_action_update(Simulation simulation[static 1],
                                 Action place_action[static 1]) {
-  if (action_activated(place_action)) {
+  if (action_activated(simulation, place_action)) {
     switch (*(PlaceMode *)place_action->data) {
     case NotPlacing:
       start_placement(simulation, place_action);
@@ -107,7 +111,10 @@ static void place_action_update(Simulation simulation[static 1],
       Vector2 dest_pos =
           Vector2Clamp(CLOSEST_VALID_GRID_VEC_FROM_MOUSE_POS,
                        VEC2(0, SIMULATION_AREA_Y), VEC2(WIDTH, HEIGHT));
-      wire_set_last((Wire *)simulation->active_component.ptr, dest_pos);
+
+      Wire *wire = (Wire *)simulation->active_component.ptr;
+      wire->is_last_set = true;
+      wire_set_last(wire, dest_pos);
 
       if (IsKeyPressed(KEY_ENTER)) {
         place_active_component(simulation, place_action);
@@ -116,7 +123,7 @@ static void place_action_update(Simulation simulation[static 1],
   }
 }
 
-static void place_action_render(const Action *const _) {
+static void place_action_render() {
   // Draw
   DrawLineEx(VEC2(SIMULATION_AREA_X, SIMULATION_AREA_Y - 3),
              VEC2(SIMULATION_AREA_X + WIDTH, SIMULATION_AREA_Y - 3),
@@ -133,6 +140,7 @@ static Button PLACE_BUTTON = {
 
 static Action PLACE_ACTION = {
     .data = NULL,
+    .active = false,
     .button = &PLACE_BUTTON,
     .shortcut_cond = place_action_shortcut,
     .UPDATE_FN = place_action_update,

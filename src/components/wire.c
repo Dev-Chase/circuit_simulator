@@ -26,12 +26,16 @@ Component wire_new(Color colour) {
       .render = wire_render,
       .render_highlight = wire_render_highlight,
       // .render_run = NULL, TODO: implement
+
+      // Information
+      .is_hovered = wire_is_hovered,
   };
 
   Wire *wire = (Wire *)component.ptr;
   *wire = (Wire){
       .points = (Vector2 *)malloc(sizeof(Vector2) * STARTING_POINTS_CAPACITY),
       .points_capacity = STARTING_POINTS_CAPACITY,
+      .is_last_set = false,
       .points_len = 0,
       .colour = colour,
   };
@@ -39,9 +43,12 @@ Component wire_new(Color colour) {
   return component;
 }
 
-bool wire_point_in_line(Wire wire[static 1], size_t i) {
-  return (wire->points[i].x == wire->points[i - 1].x ||
-          wire->points[i].y == wire->points[i - 1].y);
+size_t wire_last_i(const Wire wire[static 1]) {
+  return (wire->is_last_set) ? wire->points_len - 2 : wire->points_len - 1;
+}
+
+bool points_in_line(Vector2 point_a, Vector2 point_b) {
+  return (point_a.x == point_b.x || point_a.y == point_b.y);
 }
 
 bool wire_contains_point(Wire wire[static 1], Vector2 point,
@@ -79,7 +86,23 @@ void wire_add_point(const Component wire_component[static 1],
 #endif
   }
 
-  wire->points[wire->points_len] = *(Vector2 *)POINT;
+  size_t last_i = wire_last_i(wire);
+  Vector2 point_a = wire->points[last_i];
+  Vector2 point_b = *(Vector2 *)POINT;
+
+  // TODO: change drawing corners like this to be put when creating wires
+  if (!points_in_line(point_a, point_b)) {
+    Vector2 point_c;
+    if (fabsf(point_a.x - point_b.x) > fabsf(point_a.y - point_b.y) &&
+        wire_contains_point(wire, VEC2(point_b.x, point_a.y), false)) {
+      point_c = (Vector2){point_b.x, point_a.y};
+    } else {
+      point_c = (Vector2){point_a.x, point_b.y};
+    }
+    wire_add_point(wire_component, &point_c);
+  }
+
+  wire->points[wire->points_len - 1] = *(Vector2 *)POINT;
   wire->points_len++;
 }
 
@@ -128,8 +151,7 @@ void wire_render_segment(Wire wire[static 1], size_t i, int thickness) {
   Vector2 point_a = wire->points[i - 1];
   Vector2 point_b = wire->points[i];
 
-  // TODO: change drawing corners like this to be put when creating wires
-  if (!wire_point_in_line(wire, i)) {
+  if (!points_in_line(point_a, point_b)) {
     Vector2 point_c;
     if (fabsf(point_a.x - point_b.x) > fabsf(point_a.y - point_b.y) &&
         wire_contains_point(wire, VEC2(point_b.x, point_a.y), false)) {
@@ -139,7 +161,6 @@ void wire_render_segment(Wire wire[static 1], size_t i, int thickness) {
     }
     DrawLineEx(point_a, point_c, thickness, wire->colour);
     point_a = point_c;
-    // draw corners
   }
 
   DrawLineEx(point_a, point_b, thickness, wire->colour);
@@ -155,11 +176,31 @@ void wire_render(const Component wire_component[static 1]) {
 
 void wire_render_highlight(const Component wire_component[static 1]) {
   Wire *wire = (Wire *)wire_component->ptr;
+  Color old_colour = wire->colour;
+  wire->colour = WIRE_HIGHLIGHTED_COLOUR;
 
   for (size_t i = 1; i < wire->points_len; i++) {
-    wire_render_segment(wire, i, WIRE_THICKNESS + 1);
+    wire_render_segment(wire, i, WIRE_HIGHLIGHTED_THICKNESS);
   }
+
+  wire->colour = old_colour;
 }
 
 // render_run
-//
+
+static bool is_val_between_vals(float val, float val_a, float val_b) {
+  return val >= fminf(val_a, val_b) && val <= fmaxf(val_a, val_b);
+}
+
+bool wire_is_hovered(const Component wire_component[static 1]) {
+  Wire *wire = (Wire *)wire_component->ptr;
+  for (size_t i = 1; i < wire->points_len; i++) {
+    if (CheckCollisionPointLine(CLOSEST_VALID_GRID_VEC_FROM_MOUSE_POS,
+                                wire->points[i - 1], wire->points[i],
+                                GRID_VAL_TO_COORD(0.75))) {
+      return true;
+    }
+  }
+
+  return false;
+}

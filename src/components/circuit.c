@@ -5,22 +5,28 @@
 #include <string.h>
 
 #define DEFAULT_CIRCUIT_COMPONENT_LEN 20
-Component circuit_new(const char *path) {
+Component circuit_new(const char *path, float tile_width, float tile_height) {
   Component component = (Component){
       .ptr = malloc(sizeof(Circuit)),
 
+      // Data Manipulation
       .add_data = circuit_add_component,
       .del_data = circuit_del_component,
       .clear = circuit_clear,
       .free = circuit_free,
 
+      // Actions
       // .save = circuit_save,
       // .run = circuit_run,
       .place = circuit_place,
 
+      // Rendering
       .render = circuit_render,
       // .render_run = circuit_render_run,
       .render_run = NULL,
+
+      // Information
+      .is_hovered = circuit_is_hovered,
   };
 
   *(Circuit *)component.ptr = (Circuit){
@@ -28,6 +34,8 @@ Component circuit_new(const char *path) {
       .components = malloc(sizeof(Component) * DEFAULT_CIRCUIT_COMPONENT_LEN),
       .components_len = 0,
       .components_capacity = DEFAULT_CIRCUIT_COMPONENT_LEN,
+      .rect = RECT(0, 0, GRID_VAL_TO_COORD(tile_width),
+                   GRID_VAL_TO_COORD(tile_height)),
   };
 
   return component;
@@ -88,11 +96,12 @@ void circuit_free(Component circuit_component[static 1]) {
 
 void circuit_place(Component circuit_component[static 1], Vector2 grid_pos) {
   Circuit *circuit = (Circuit *)circuit_component->ptr;
-  circuit->pos = GRID_VEC_TO_COORD(grid_pos);
+  circuit->rect.x = GRID_VAL_TO_COORD(grid_pos.x);
+  circuit->rect.y = GRID_VAL_TO_COORD(grid_pos.y);
 }
 
 void circuit_render(const Component circuit_component[static 1]) {
-  //TODO: implement abstracted drawing
+  // TODO: implement abstracted drawing
 
   Circuit *circuit = (Circuit *)circuit_component->ptr;
   // for (size_t i = 0; i < circuit->components_len; i++) {
@@ -103,3 +112,10 @@ void circuit_render(const Component circuit_component[static 1]) {
 }
 
 // render_run
+
+bool circuit_is_hovered(const Component circuit_component[static 1]) {
+  Circuit *circuit = (Circuit *)circuit_component->ptr;
+
+  return CheckCollisionPointRec(CLOSEST_VALID_GRID_VEC_FROM_MOUSE_POS,
+                                circuit->rect);
+}

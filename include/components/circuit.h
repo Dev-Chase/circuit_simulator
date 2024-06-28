@@ -13,12 +13,12 @@ typedef struct Circuit {
   Component *components;
   size_t components_len;
   size_t components_capacity; // in number of components
-  Vector2 pos;
+  Rectangle rect;
   // TODO: add draw data and implement rendering for imported circuits vs open
   // circuit
 } Circuit;
 
-Component circuit_new(const char *path);
+Component circuit_new(const char *path, float tile_width, float tile_height);
 
 /** Component Interface */
 // Data Manipulation
@@ -38,6 +38,9 @@ void circuit_place(Component circuit_component[static 1], Vector2 grid_pos);
 // Rendering
 void circuit_render(const Component circuit_component[static 1]);
 void circuit_render_run(const Component circuit_component[static 1]);
+
+// Information
+bool circuit_is_hovered(const Component circuit_component[static 1]);
 
 #ifdef _cplusplus
 }

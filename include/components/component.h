@@ -38,6 +38,9 @@ typedef struct Component {
   void (*render_highlight)(const Component *const SELF);
   void (*render_run)(const Component *const SELF);
 
+  // Information
+  bool (*is_hovered)(const Component *const SELF);
+
   ComponentPoint *ends;
 } Component;
 
@@ -48,8 +51,13 @@ typedef struct Component {
   }
 #define COMPONENT_FN_PARAMS(component, fn, params)                             \
   if (component.fn != NULL) {                                                  \
-    component.fn(component, params);                                           \
+    component.fn(&component, params);                                          \
   }
+
+// NOTE: the component must implement the returning function, otherwise UB
+#define COMPONENT_FN_RETURNS(component, fn) component.fn(&component)
+#define COMPONENT_FN_RETURNS_PARAMS(component, fn, params)                     \
+  component.fn(&component, params)
 #else
 #define COMPONENT_FN(component, fn) component->fn(component)
 #define COMPONENT_FN_PARAMS(component, fn, params)                             \

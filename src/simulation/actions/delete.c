@@ -1,7 +1,9 @@
 #include "action.h"
+#include "circuit.h"
 #include "raylib.h"
 #include "simulation.h"
 #include "utils.h"
+#include <limits.h>
 #include <stdio.h>
 
 #define DEL_X GRID_VAL_TO_COORD(13)
@@ -14,23 +16,41 @@ static bool del_action_shorcut(void) {
          (IsKeyDown(KEY_RIGHT_SHIFT) || IsKeyDown(KEY_LEFT_SHIFT));
 }
 
-//TODO:: add activated action state
-static void del_action_update(Simulation _[static 1],
+// TODO:: add activated action state
+static void del_action_update(Simulation simulation[static 1],
                               Action del_action[static 1]) {
-  if (action_activated(del_action)) {
-    *(bool *)del_action->data = !*(bool *)del_action->data;
-    printf("Activated Delete Action!, Data: %hhu\n", *(bool *)del_action->data);
+
+  if (action_activated(simulation, del_action)) {
+    del_action->active = !del_action->active;
+    printf("Activated Delete Action!, Data: %hhu\n", del_action->active);
   }
 
-  if (IsKeyPressed(KEY_ESCAPE) && *(bool *)del_action->data) {
-    *(bool *)del_action->data = false;
-    puts("Cancelled Deletion");
+  if (del_action->active) {
+    size_t hovered_i = simulation_get_hovered_component(simulation);
+    *(size_t *)del_action->data = hovered_i;
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && hovered_i != SIZE_T_MAX) {
+      circuit_del_component(&simulation->circuit, hovered_i);
+    }
+
+    if (IsKeyPressed(KEY_ESCAPE)) {
+      del_action->active = false;
+      puts("Cancelled Deletion");
+    }
   }
   // TODO: implement
 }
 
-static void del_action_render(const Action del_action[static 1]) {
-  if (*(bool *)del_action->data) {
+static void del_action_render(const Simulation simulation[static 1],
+                              const Action del_action[static 1]) {
+  if (del_action->active) {
+    size_t hovered_i = *(size_t *)del_action->data;
+
+    if (hovered_i != SIZE_T_MAX) {
+      Circuit *circuit = (Circuit *)simulation->circuit.ptr;
+
+      COMPONENT_FN(circuit->components[hovered_i], render_highlight);
+    }
+
     DrawRectangle(GetMouseX() - 10, GetMouseY() - 10, 20, 20, FG_COLOUR);
   }
 }
@@ -44,6 +64,7 @@ static Button DEL_BUTTON = {
 
 static Action DEL_ACTION = {
     .data = NULL,
+    .active = false,
     .button = &DEL_BUTTON,
     .shortcut_cond = del_action_shorcut,
     .UPDATE_FN = del_action_update,
@@ -51,8 +72,9 @@ static Action DEL_ACTION = {
 };
 
 Action *delete_action_init(void) {
-  action_init(&DEL_ACTION, sizeof(bool));
-  *(bool *)DEL_ACTION.data = false;
+  // Initializing
+  action_init(&DEL_ACTION, sizeof(size_t));
+  *(size_t *)DEL_ACTION.data = SIZE_T_MAX;
 
   return &DEL_ACTION;
 }

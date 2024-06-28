@@ -8,12 +8,15 @@ extern "C" {
 #endif
 
 #define WIRE_THICKNESS 2
+#define WIRE_HIGHLIGHTED_THICKNESS WIRE_THICKNESS * 2
+#define WIRE_HIGHLIGHTED_COLOUR WHITE
 #define WIRE_COLOUR RED
 
 typedef struct Wire {
   Vector2 *points;
   size_t points_capacity;
   size_t points_len;
+  bool is_last_set;
   Color colour;
   // TODO: add draw data and implement rendering for imported circuits vs open
   // circuit
@@ -23,7 +26,9 @@ typedef struct Wire {
 Component wire_new(Color colour);
 
 // Utlity Functions
-bool wire_contains_point(Wire wire[static 1], Vector2 point, bool last_point_set);
+size_t wire_last_i(const Wire wire[static 1]);
+bool wire_contains_point(Wire wire[static 1], Vector2 point,
+                         bool last_point_set);
 
 /** Component Interface */
 // Data Manipulation
@@ -43,6 +48,9 @@ void wire_place(Component wire_component[static 1], Vector2 grid_pos);
 void wire_render(const Component wire_component[static 1]);
 void wire_render_highlight(const Component wire_component[static 1]);
 void wire_render_run(const Component wire_component[static 1]);
+
+// Information
+bool wire_is_hovered(const Component wire_component[static 1]);
 
 #ifdef _cplusplus
 }

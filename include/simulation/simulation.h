@@ -25,8 +25,13 @@ typedef struct Simulation {
 } Simulation;
 
 Simulation simulation_new(void);
+bool simulation_other_action_active(Simulation simulation[static 1],
+                                    Action action[static 1]);
 void simulation_update(Simulation simulation[static 1]);
 void simulation_render(const Simulation simulation[static 1]);
+size_t simulation_get_hovered_component(
+    const Simulation
+        simulation[static 1]); // TODO: implement (highlight hovered component)
 void simulation_free(Simulation simulation[static 1]);
 
 #ifdef _cplusplus

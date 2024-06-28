@@ -30,13 +30,12 @@ static bool stop_action_shortcut(void) {
          IsKeyPressed(KEY_SPACE);
 }
 
-static void run_action_update(Simulation _[static 1],
+static void run_action_update(Simulation simulation[static 1],
                               Action run_action[static 1]) {
-  if (action_activated(run_action)) {
-    bool *btn_state = (bool *)run_action->data;
-    *btn_state = !*btn_state;
+  if (action_activated(simulation, run_action)) {
+    run_action->active = !run_action->active;
 
-    if (*btn_state) {
+    if (run_action->active) {
       run_action->shortcut_cond = stop_action_shortcut;
       button_set_state(run_action->button, STOP_TXT, STOP_BG);
     } else {
@@ -56,6 +55,7 @@ static Button RUN_BUTTON = {
 
 static Action RUN_ACTION = {
     .data = NULL,
+    .active = false,
     .button = &RUN_BUTTON,
     .shortcut_cond = run_action_shortcut,
     .UPDATE_FN = run_action_update,
@@ -63,8 +63,8 @@ static Action RUN_ACTION = {
 };
 
 Action *run_action_init(void) {
-  action_init(&RUN_ACTION, sizeof(bool));
-  assert(sizeof(bool) == 1);
-  memset(RUN_ACTION.data, false, sizeof(bool));
+  // action_init(&RUN_ACTION, sizeof(bool));
+  // assert(sizeof(bool) == 1);
+  // memset(RUN_ACTION.data, false, sizeof(bool));
   return &RUN_ACTION;
 }
