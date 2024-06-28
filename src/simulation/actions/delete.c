@@ -1,70 +1,58 @@
 #include "action.h"
-#include "button.h"
-#include "constants.h"
 #include "raylib.h"
 #include "simulation.h"
 #include "utils.h"
-#include <assert.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
-// Default Action Data
-#define RUN_X GRID_VAL_TO_COORD(5)
-#define RUN_Y GRID_VAL_TO_COORD(1)
-#define RUN_BG TRANS_GREEN
-#define RUN_TXT "Run"
-#define STOP_BG TRANS_RED
-#define STOP_TXT "Stop"
+#define DEL_X GRID_VAL_TO_COORD(13)
+#define DEL_Y GRID_VAL_TO_COORD(1)
+#define DEL_TXT "Delete"
 
 // Functions
-static bool run_action_shortcut(void) {
-  return (IsKeyPressed(KEY_R) &&
-          (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))) ||
-         IsKeyPressed(KEY_SPACE);
+static bool del_action_shorcut(void) {
+  return IsKeyPressed(KEY_D) &&
+         (IsKeyDown(KEY_RIGHT_SHIFT) || IsKeyDown(KEY_LEFT_SHIFT));
 }
 
-static bool stop_action_shortcut(void) {
-  return (IsKeyPressed(KEY_S) &&
-          (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))) ||
-         IsKeyPressed(KEY_SPACE);
+//TODO:: add activated action state
+static void del_action_update(Simulation _[static 1],
+                              Action del_action[static 1]) {
+  if (action_activated(del_action)) {
+    *(bool *)del_action->data = !*(bool *)del_action->data;
+    printf("Activated Delete Action!, Data: %hhu\n", *(bool *)del_action->data);
+  }
+
+  if (IsKeyPressed(KEY_ESCAPE) && *(bool *)del_action->data) {
+    *(bool *)del_action->data = false;
+    puts("Cancelled Deletion");
+  }
+  // TODO: implement
 }
 
-static void run_action_update(Simulation _[static 1],
-                              Action run_action[static 1]) {
-  if (action_activated(run_action)) {
-    bool *btn_state = (bool *)run_action->data;
-    *btn_state = !*btn_state;
-
-    if (*btn_state) {
-      run_action->shortcut_cond = stop_action_shortcut;
-      button_set_state(run_action->button, STOP_TXT, STOP_BG);
-    } else {
-      run_action->shortcut_cond = run_action_shortcut;
-      button_set_state(run_action->button, RUN_TXT, RUN_BG);
-    }
+static void del_action_render(const Action del_action[static 1]) {
+  if (*(bool *)del_action->data) {
+    DrawRectangle(GetMouseX() - 10, GetMouseY() - 10, 20, 20, FG_COLOUR);
   }
 }
 
-// Button
-static Button RUN_BUTTON = {
-    .txt = RUN_TXT,
-    RECT(RUN_X, RUN_Y, BTN_WIDTH, BTN_HEIGHT),
+static Button DEL_BUTTON = {
+    .txt = DEL_TXT,
+    .RECT = BTN_RECT(DEL_X, DEL_Y),
     .fg = FG_COLOUR,
-    .bg = RUN_BG,
+    .bg = BG_COLOUR,
 };
 
-static Action RUN_ACTION = {
+static Action DEL_ACTION = {
     .data = NULL,
-    .button = &RUN_BUTTON,
-    .shortcut_cond = run_action_shortcut,
-    .UPDATE_FN = run_action_update,
-    .RENDER_FN = NULL,
+    .button = &DEL_BUTTON,
+    .shortcut_cond = del_action_shorcut,
+    .UPDATE_FN = del_action_update,
+    .RENDER_FN = del_action_render,
 };
 
-Action *run_action_init(void) {
-  action_init(&RUN_ACTION, sizeof(bool));
-  assert(sizeof(bool) == 1);
-  memset(RUN_ACTION.data, false, sizeof(bool));
-  return &RUN_ACTION;
+Action *delete_action_init(void) {
+  action_init(&DEL_ACTION, sizeof(bool));
+  *(bool *)DEL_ACTION.data = false;
+
+  return &DEL_ACTION;
 }

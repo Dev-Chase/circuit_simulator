@@ -16,6 +16,7 @@ Simulation simulation_new(void) {
                 new_action_init(),
                 run_action_init(),
                 place_action_init(),
+                delete_action_init(),
             },
         .active_component = {0},
         .circuit = circuit_new(NULL),

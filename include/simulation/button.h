@@ -1,8 +1,9 @@
 #ifndef BUTTON_H
 #define BUTTON_H
 
-#include "raylib.h"
 #include "constants.h"
+#include "raylib.h"
+#include "utils.h"
 #ifdef _cplusplus
 extern "C" {
 #endif
@@ -19,14 +20,19 @@ extern "C" {
 #define BTN_CORNER_SEGMENTS 25
 
 // Defaults
-#define TRANS_GREEN (Color){0, 228, 48, 180}
-#define TRANS_RED (Color){230, 41, 55, 190}
+#define TRANS_GREEN                                                            \
+  (Color) { 0, 228, 48, 180 }
+#define TRANS_RED                                                              \
+  (Color) { 230, 41, 55, 190 }
+
+// Utility Macros
+#define BTN_RECT(x, y) RECT(x, y, BTN_WIDTH, BTN_HEIGHT)
 
 typedef struct Button {
-	const char *txt;
-	const Rectangle RECT;
-	Color fg;
-	Color bg;
+  const char *txt;
+  const Rectangle RECT;
+  Color fg;
+  Color bg;
 } Button;
 
 bool button_is_clicked(Button button[static 1]);

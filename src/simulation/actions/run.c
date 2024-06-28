@@ -49,7 +49,7 @@ static void run_action_update(Simulation _[static 1],
 // Button
 static Button RUN_BUTTON = {
     .txt = RUN_TXT,
-    RECT(RUN_X, RUN_Y, BTN_WIDTH, BTN_HEIGHT),
+    BTN_RECT(RUN_X, RUN_Y),
     .fg = FG_COLOUR,
     .bg = RUN_BG,
 };

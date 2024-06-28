@@ -29,7 +29,7 @@ static void new_action_update(Simulation simulation[static 1],
 // Button
 static Button NEW_BUTTON = {
     .txt = NEW_BUTTON_TXT,
-    RECT(NEW_BUTTON_X, NEW_BUTTON_Y, BTN_WIDTH, BTN_HEIGHT),
+    BTN_RECT(NEW_BUTTON_X, NEW_BUTTON_Y),
     .fg = FG_COLOUR,
     .bg = BG_COLOUR,
 };

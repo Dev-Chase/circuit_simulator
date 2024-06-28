@@ -20,8 +20,8 @@
   RECT(SIMULATION_AREA_X, SIMULATION_AREA_Y, WIDTH, HEIGHT - SIMULATION_AREA_Y)
 #define PLACE_TXT "Place"
 #define PLACE_LINE_WIDTH 3
-#define PLACE_X 9
-#define PLACE_Y 1
+#define PLACE_X GRID_VAL_TO_COORD(9)
+#define PLACE_Y GRID_VAL_TO_COORD(1)
 
 typedef enum PlaceMode { NotPlacing, Creating, Positioning } PlaceMode;
 
@@ -126,8 +126,7 @@ static void place_action_render(const Action *const _) {
 // Button
 static Button PLACE_BUTTON = {
     .txt = PLACE_TXT,
-    .RECT = RECT(GRID_VAL_TO_COORD(PLACE_X), GRID_VAL_TO_COORD(PLACE_Y),
-                 BTN_WIDTH, BTN_HEIGHT),
+    .RECT = BTN_RECT(PLACE_X, PLACE_Y),
     .fg = FG_COLOUR,
     .bg = BG_COLOUR,
 };

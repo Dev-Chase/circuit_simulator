@@ -9,11 +9,12 @@ extern "C" {
 
 // Simulation Actions
 // #define N_ACTIONS 5
-#define N_ACTIONS 3
+#define N_ACTIONS 4
 Action *new_action_init(void);
 Action *run_action_init(void);
 // Action *import_action_init(void);
 Action *place_action_init(void);
+Action *delete_action_init(void);
 // Action *save_action_init(void);
 
 typedef struct Simulation {
