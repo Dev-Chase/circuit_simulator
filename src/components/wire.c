@@ -44,8 +44,14 @@ bool wire_point_in_line(Wire wire[static 1], size_t i) {
           wire->points[i].y == wire->points[i - 1].y);
 }
 
-bool wire_contains_point(Wire wire[static 1], Vector2 point) {
-  for (size_t i = 0; i < wire->points_len; i++) {
+bool wire_contains_point(Wire wire[static 1], Vector2 point,
+                         bool last_point_set) {
+  if (wire->points_len == 0) {
+    return false;
+  }
+  size_t points_limit =
+      last_point_set ? wire->points_len - 1 : wire->points_len;
+  for (size_t i = 0; i < points_limit; i++) {
     if (wire->points[i].x == point.x && wire->points[i].y == point.y) {
       return true;
     }
@@ -58,7 +64,7 @@ bool wire_contains_point(Wire wire[static 1], Vector2 point) {
 void wire_add_point(const Component wire_component[static 1],
                     const void *POINT) {
   Wire *wire = (Wire *)wire_component->ptr;
-  //TODO: implmenet corners here
+  // TODO: implmenet corners here
 
   if (wire->points_len + 1 > wire->points_capacity) {
     wire->points_capacity *= 2;
@@ -126,7 +132,7 @@ void wire_render_segment(Wire wire[static 1], size_t i, int thickness) {
   if (!wire_point_in_line(wire, i)) {
     Vector2 point_c;
     if (fabsf(point_a.x - point_b.x) > fabsf(point_a.y - point_b.y) &&
-        wire_contains_point(wire, VEC2(point_b.x, point_a.y))) {
+        wire_contains_point(wire, VEC2(point_b.x, point_a.y), false)) {
       point_c = (Vector2){point_b.x, point_a.y};
     } else {
       point_c = (Vector2){point_a.x, point_b.y};

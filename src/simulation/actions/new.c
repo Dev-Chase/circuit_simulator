@@ -1,5 +1,6 @@
 #include "action.h"
 #include "button.h"
+#include "circuit.h"
 #include "raylib.h"
 #include "simulation.h"
 #include "utils.h"
@@ -28,7 +29,7 @@ static void new_action_update(Simulation simulation[static 1],
 // Button
 static Button NEW_BUTTON = {
     .txt = NEW_BUTTON_TXT,
-    (Rectangle){.x = NEW_BUTTON_X, NEW_BUTTON_Y, BTN_WIDTH, BTN_HEIGHT},
+    RECT(NEW_BUTTON_X, NEW_BUTTON_Y, BTN_WIDTH, BTN_HEIGHT),
     .fg = FG_COLOUR,
     .bg = BG_COLOUR,
 };

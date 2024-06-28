@@ -2,7 +2,7 @@
 #define SIMULATION_H
 
 #include "action.h"
-#include "circuit.h"
+#include "component.h"
 #ifdef _cplusplus
 extern "C" {
 #endif
@@ -20,7 +20,7 @@ typedef struct Simulation {
   Action *actions[N_ACTIONS];
   Component circuit;
   Component active_component;
-  bool running; //TODO: implement
+  bool running; // TODO: implement
 } Simulation;
 
 Simulation simulation_new(void);

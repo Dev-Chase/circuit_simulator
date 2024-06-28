@@ -1,8 +1,10 @@
 #include "action.h"
 #include "button.h"
+#include "circuit.h"
 #include "component.h"
 #include "constants.h"
 #include "raylib.h"
+#include "raymath.h"
 #include "simulation.h"
 #include "utils.h"
 #include "wire.h"
@@ -13,31 +15,20 @@
 
 // Default Action Data
 #define SIMULATION_AREA_X 0
-#define SIMULATION_AREA_Y GRID_VAL_TO_COORD(3.2)
+#define SIMULATION_AREA_Y GRID_VAL_TO_COORD(3)
+#define SIMULATION_AREA_RECT                                                   \
+  RECT(SIMULATION_AREA_X, SIMULATION_AREA_Y, WIDTH, HEIGHT - SIMULATION_AREA_Y)
+#define PLACE_TXT "Place"
 #define PLACE_LINE_WIDTH 3
+#define PLACE_X 9
+#define PLACE_Y 1
 
 typedef enum PlaceMode { NotPlacing, Creating, Positioning } PlaceMode;
 
 // Functions
-static void add_placement(Simulation simulation[static 1], Action _[static 1]) {
-  Vector2 point = CLOSEST_GRID_FROM_MOUSE_POS;
-  printf("Point: {%f, %f}\n", point.x, point.y);
-  wire_add_point(&simulation->active_component, &point);
-  wire_add_point(&simulation->active_component, &point);
-}
-
-static void start_placement(Simulation simulation[static 1],
-                            Action place_action[static 1]) {
-  *(PlaceMode *)place_action->data = Creating;
-  // start creating
-  if (!memcmp(&simulation->active_component, &(Component){0},
-              sizeof(Component))) {
-    puts("Making new wire");
-    simulation->active_component = wire_new(WIRE_COLOUR);
-    add_placement(simulation, place_action);
-  } else {
-    // place active component at Grid pos that corresponds to mouse pos
-  }
+static bool place_action_shortcut(void) {
+  return IsMouseButtonPressed(MOUSE_BUTTON_LEFT) &&
+         CheckCollisionPointRec(GetMousePosition(), SIMULATION_AREA_RECT);
 }
 
 void place_active_component(Simulation simulation[static 1],
@@ -51,6 +42,36 @@ void place_active_component(Simulation simulation[static 1],
   simulation->active_component = (Component){0};
   *(PlaceMode *)place_action->data = NotPlacing;
   puts("Finished");
+}
+
+static void add_placement(Simulation simulation[static 1],
+                          Action place_action[static 1]) {
+  Vector2 point = CLOSEST_VALID_GRID_VEC_FROM_MOUSE_POS;
+  printf("Point: {%f, %f}\n", point.x, point.y);
+  Wire *wire = (Wire *)simulation->active_component.ptr;
+  if (wire_contains_point(wire, point, true)) {
+    place_active_component(simulation, place_action);
+    return;
+  }
+  wire_add_point(&simulation->active_component, &point);
+  wire_add_point(&simulation->active_component, &point);
+}
+
+static void start_placement(Simulation simulation[static 1],
+                            Action place_action[static 1]) {
+  // start creating
+  if (!memcmp(&simulation->active_component, &(Component){0},
+              sizeof(Component)) &&
+      CheckCollisionPointRec(GetMousePosition(), SIMULATION_AREA_RECT)) {
+    *(PlaceMode *)place_action->data = Creating;
+    puts("Making new wire");
+    simulation->active_component = wire_new(WIRE_COLOUR);
+    add_placement(simulation, place_action);
+  } else {
+    *(PlaceMode *)place_action->data = Positioning;
+    puts("Placing Active Component");
+    // place active component at Grid pos that corresponds to mouse pos
+  }
 }
 
 void cancel_active_component(Simulation simulation[static 1],
@@ -83,8 +104,11 @@ static void place_action_update(Simulation simulation[static 1],
       cancel_active_component(simulation, place_action);
     }
     if (*(PlaceMode *)place_action->data == Creating) {
-      wire_set_last((Wire *)simulation->active_component.ptr,
-                    CLOSEST_GRID_FROM_MOUSE_POS);
+      Vector2 dest_pos =
+          Vector2Clamp(CLOSEST_VALID_GRID_VEC_FROM_MOUSE_POS,
+                       VEC2(0, SIMULATION_AREA_Y), VEC2(WIDTH, HEIGHT));
+      wire_set_last((Wire *)simulation->active_component.ptr, dest_pos);
+
       if (IsKeyPressed(KEY_ENTER)) {
         place_active_component(simulation, place_action);
       }
@@ -101,15 +125,17 @@ static void place_action_render(const Action *const _) {
 
 // Button
 static Button PLACE_BUTTON = {
-    .txt = NULL,
-    .RECT = (Rectangle){SIMULATION_AREA_X, SIMULATION_AREA_Y, WIDTH,
-                        HEIGHT - SIMULATION_AREA_Y},
+    .txt = PLACE_TXT,
+    .RECT = RECT(GRID_VAL_TO_COORD(PLACE_X), GRID_VAL_TO_COORD(PLACE_Y),
+                 BTN_WIDTH, BTN_HEIGHT),
+    .fg = FG_COLOUR,
+    .bg = BG_COLOUR,
 };
 
 static Action PLACE_ACTION = {
     .data = NULL,
     .button = &PLACE_BUTTON,
-    .shortcut_cond = NULL,
+    .shortcut_cond = place_action_shortcut,
     .UPDATE_FN = place_action_update,
     .RENDER_FN = place_action_render,
 };

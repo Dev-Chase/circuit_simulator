@@ -12,6 +12,9 @@ extern "C" {
 #define VECTOR2(x_val, y_val)                                                  \
   (Vector2) { .x = x_val, .y = y_val }
 #define VEC2 VECTOR2
+#define RECT(x, y, w, h)                                                       \
+  (Rectangle) { x, y, w, h }
+
 #define GRID_VAL_TO_COORD(val) val *BLOCK_SIZE
 #define GRID_TO_COORD(i, j) VECTOR2(i *BLOCK_SIZE, j *BLOCK_SIZE)
 #define GRID_VEC_TO_COORD(vec) VECTOR2(vec.x *BLOCK_SIZE, vec.y *BLOCK_SIZE)
@@ -21,9 +24,11 @@ extern "C" {
 #define COORD_VEC_TO_GRID(vec)                                                 \
   VECTOR2(COORD_VAL_TO_GRID(vec.x), COORD_VAL_TO_GRID(vec.y))
 
-#define CLOSEST_GRID_FROM_MOUSE_POS                                            \
-  VEC2(GRID_VAL_TO_COORD(COORD_VAL_TO_GRID(GetMouseX())),                      \
-       GRID_VAL_TO_COORD(COORD_VAL_TO_GRID(GetMouseY())))
+#define CLOSEST_VALID_GRID_VAL_FROM(x) GRID_VAL_TO_COORD(COORD_VAL_TO_GRID(x))
+
+#define CLOSEST_VALID_GRID_VEC_FROM_MOUSE_POS                                  \
+  VEC2(CLOSEST_VALID_GRID_VAL_FROM(GetMouseX()),                               \
+       CLOSEST_VALID_GRID_VAL_FROM(GetMouseY()))
 
 #ifdef _cplusplus
 }

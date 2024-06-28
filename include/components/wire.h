@@ -22,6 +22,9 @@ typedef struct Wire {
 // Initialization
 Component wire_new(Color colour);
 
+// Utlity Functions
+bool wire_contains_point(Wire wire[static 1], Vector2 point, bool last_point_set);
+
 /** Component Interface */
 // Data Manipulation
 void wire_add_point(const Component wire_component[static 1],
