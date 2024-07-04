@@ -93,22 +93,10 @@ bool simulation_should_highlight(const Simulation simulation[static 1]) {
 
 void simulation_update(Simulation simulation[static 1]) {
   simulation->hovered_i = simulation_get_hovered(simulation);
-  // component_group_clear(&simulation->hovered);
-  // if (simulation->hovered_i != SIZE_T_MAX) {
-  //   component_group_add(&simulation->hovered, simulation->hovered_i);
-  // }
 
   if (simulation_should_deselect(simulation)) {
     component_group_clear(&simulation->selected);
   }
-
-  // if (simulation_should_highlight(simulation) &&
-  //     (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) &&
-  //      CheckCollisionPointRec(CLOSEST_VALID_GRID_VEC_FROM_MOUSE_POS,
-  //                             SIMULATION_AREA_RECT))) {
-  //   puts("Selected");
-  //   component_group_add(&simulation->selected, simulation->hovered_i);
-  // }
 
   // Update Actions
   for (size_t i = 0; i < N_ACTIONS; i++) {

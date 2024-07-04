@@ -10,6 +10,7 @@ extern "C" {
 
 // Utility Functions
 Vector2 vector2_min(Vector2 a, Vector2 b);
+Vector2 vector2_constrain_to_simulation_area(Vector2 point);
 
 // Utility Macros
 #define VECTOR2(x_val, y_val)                                                  \

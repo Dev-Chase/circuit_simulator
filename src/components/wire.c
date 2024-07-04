@@ -1,5 +1,7 @@
 #include "wire.h"
 #include "raylib.h"
+#include "raymath.h"
+#include "simulation.h"
 #include "utils.h"
 #include <assert.h>
 #include <math.h>
@@ -112,7 +114,8 @@ void wire_add_point(const Component wire_component[static 1],
 }
 
 void wire_set_last(Wire wire[static 1], Vector2 point) {
-  wire->points[wire->points_len - 1] = point;
+  wire->points[wire->points_len - 1] =
+      vector2_constrain_to_simulation_area(point);
 }
 
 void wire_del_point(const Component wire_component[static 1], size_t ind) {

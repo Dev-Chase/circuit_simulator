@@ -32,8 +32,7 @@ static void select_action_cancel(Simulation simulation[static 1],
 static void select_action_active_update(Simulation simulation[static 1],
                                         Action select_action[static 1]) {
   Vector2 start_mouse_pos = *(Vector2 *)select_action->data;
-  Vector2 mouse_pos = Vector2Clamp(
-      GetMousePosition(), VEC2(0, SIMULATION_AREA_Y), VEC2(WIDTH, HEIGHT));
+  Vector2 mouse_pos = vector2_constrain_to_simulation_area(GetMousePosition());
   Vector2 top_left = vector2_min(start_mouse_pos, mouse_pos);
 
   Circuit *sim_circuit = (Circuit *)simulation->circuit.ptr;
@@ -69,7 +68,7 @@ static void select_action_update(Simulation simulation[static 1],
                                  Action select_action[static 1]) {
   if (action_activated(simulation, select_action) &&
       simulation->hovered_i == SIZE_T_MAX) {
-    action_activate(simulation, select_action);
+    select_action->active = true;
     *(Vector2 *)select_action->data = CLOSEST_VALID_GRID_VEC_FROM_MOUSE_POS;
   }
 
@@ -94,8 +93,8 @@ static void select_action_render(const Simulation _[static 1],
                                  const Action select_action[static 1]) {
   if (select_action->active) {
     Vector2 start_mouse_pos = *(Vector2 *)select_action->data;
-    Vector2 mouse_pos = Vector2Clamp(
-        GetMousePosition(), VEC2(0, SIMULATION_AREA_Y), VEC2(WIDTH, HEIGHT));
+    Vector2 mouse_pos =
+        vector2_constrain_to_simulation_area(GetMousePosition());
     Vector2 top_left = vector2_min(start_mouse_pos, mouse_pos);
     DrawRectangle(
         top_left.x, top_left.y, fabsf(mouse_pos.x - start_mouse_pos.x),
