@@ -11,6 +11,8 @@ extern "C" {
 #define WIRE_HIGHLIGHTED_THICKNESS WIRE_THICKNESS * 2
 #define WIRE_HIGHLIGHTED_COLOUR WHITE
 #define WIRE_COLOUR RED
+#define WIRE_END_COLOUR                                                        \
+  (Color) { 114, 114, 114, 255 }
 
 typedef struct Wire {
   Vector2 *points;
@@ -51,6 +53,8 @@ void wire_render_run(const Component wire_component[static 1]);
 
 // Information
 bool wire_is_hovered(const Component wire_component[static 1]);
+bool wire_collides_rect(const Component wire_component[static 1],
+                        Rectangle rect);
 
 #ifdef _cplusplus
 }

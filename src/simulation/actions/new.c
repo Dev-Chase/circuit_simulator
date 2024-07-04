@@ -13,9 +13,11 @@
 #define NEW_BUTTON_TXT "New"
 
 // Functions
-static bool new_action_shortcut(void) {
-  return IsKeyPressed(KEY_N) &&
-         (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT));
+static bool new_action_shortcut(void) { return IsKeyPressed(KEY_N); }
+
+static void new_action_cancel(Simulation _[static 1],
+                              Action new_action[static 1]) {
+  new_action->active = false;
 }
 
 static void new_action_update(Simulation simulation[static 1],
@@ -23,6 +25,7 @@ static void new_action_update(Simulation simulation[static 1],
   if (action_activated(simulation, new_action)) {
     circuit_clear(&simulation->circuit);
     puts("Circuit Cleared");
+    action_toggle(simulation, new_action);
   }
 }
 
@@ -37,8 +40,11 @@ static Button NEW_BUTTON = {
 static Action NEW_ACTION = {
     .data = NULL,
     .active = false,
+    .allow_selection = false,
+    .prevent_directly_switching_action = false,
     .button = &NEW_BUTTON,
     .shortcut_cond = new_action_shortcut,
+    .CANCEL_FN = new_action_cancel,
     .UPDATE_FN = new_action_update,
     .RENDER_FN = NULL,
 };

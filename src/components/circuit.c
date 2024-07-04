@@ -1,5 +1,7 @@
 #include "circuit.h"
+#include "raylib.h"
 #include "utils.h"
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,6 +29,7 @@ Component circuit_new(const char *path, float tile_width, float tile_height) {
 
       // Information
       .is_hovered = circuit_is_hovered,
+      .collides_rect = circuit_collides_rect,
   };
 
   *(Circuit *)component.ptr = (Circuit){
@@ -62,6 +65,9 @@ void circuit_del_component(const Component circuit_component[static 1],
                            size_t ind) {
   Circuit *circuit = (Circuit *)circuit_component->ptr;
 
+  assert(circuit->components[ind].ptr != NULL);
+  COMPONENT_FN(circuit->components[ind], free)
+
 #ifndef NDEBUG
   memset(&circuit->components[ind], 0, sizeof(Component));
 #endif
@@ -71,6 +77,19 @@ void circuit_del_component(const Component circuit_component[static 1],
   }
 
   circuit->components_len--;
+}
+
+int compare_indeces(const void *a, const void *b) {
+  return *(size_t *)a < *(size_t *)b;
+}
+
+void circuit_del_components(const Component circuit_component[static 1],
+                            ComponentGroup components[static 1]) {
+  qsort(components->component_is, components->component_len, sizeof(size_t),
+        compare_indeces);
+  for (size_t i = 0; i < components->component_len; i++) {
+    circuit_del_component(circuit_component, components->component_is[i]);
+  }
 }
 
 void circuit_clear(const Component circuit_component[static 1]) {
@@ -116,6 +135,12 @@ void circuit_render(const Component circuit_component[static 1]) {
 bool circuit_is_hovered(const Component circuit_component[static 1]) {
   Circuit *circuit = (Circuit *)circuit_component->ptr;
 
-  return CheckCollisionPointRec(CLOSEST_VALID_GRID_VEC_FROM_MOUSE_POS,
-                                circuit->rect);
+  return CheckCollisionPointRec(GetMousePosition(), circuit->rect);
+}
+
+bool circuit_collides_rect(const Component circuit_component[static 1],
+                           Rectangle rect) {
+  Circuit *circuit = (Circuit *)circuit_component->ptr;
+
+  return CheckCollisionRecs(circuit->rect, rect);
 }

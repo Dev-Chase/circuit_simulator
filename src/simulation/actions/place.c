@@ -4,7 +4,6 @@
 #include "component.h"
 #include "constants.h"
 #include "raylib.h"
-#include "raymath.h"
 #include "simulation.h"
 #include "utils.h"
 #include "wire.h"
@@ -14,120 +13,145 @@
 #include <string.h>
 
 // Default Action Data
-#define SIMULATION_AREA_X 0
-#define SIMULATION_AREA_Y GRID_VAL_TO_COORD(3)
-#define SIMULATION_AREA_RECT                                                   \
-  RECT(SIMULATION_AREA_X, SIMULATION_AREA_Y, WIDTH, HEIGHT - SIMULATION_AREA_Y)
 #define PLACE_TXT "Place"
 #define PLACE_LINE_WIDTH 3
 #define PLACE_X GRID_VAL_TO_COORD(9)
 #define PLACE_Y GRID_VAL_TO_COORD(1)
 
-typedef enum PlaceMode { NotPlacing, Creating, Positioning } PlaceMode;
+typedef enum PlaceMode { CreatingWire, Positioning } PlaceMode;
 
-// Functions
-static bool place_action_shortcut(void) {
+typedef struct PlaceInfo {
+  PlaceMode mode;
+  Component component;
+} PlaceData;
+
+// Event Functions
+inline static bool check_valid_click(void) {
   return IsMouseButtonPressed(MOUSE_BUTTON_LEFT) &&
          CheckCollisionPointRec(GetMousePosition(), SIMULATION_AREA_RECT);
 }
 
-void place_active_component(Simulation simulation[static 1],
+// Action Wide Functions
+static void place_component(Simulation simulation[static 1],
                             Action place_action[static 1]) {
-  if (*(PlaceMode *)place_action->data == Creating) {
-    Wire *wire = (Wire *)simulation->active_component.ptr;
-    wire_del_point(&simulation->active_component, wire->points_len - 1);
+  PlaceData *place_data = (PlaceData *)place_action->data;
+  if (place_data->mode == Positioning) {
+    COMPONENT_FN_PARAMS(place_data->component, place,
+                        CLOSEST_VALID_GRID_VEC_FROM_MOUSE_POS)
   }
+  circuit_add_component(&simulation->circuit, &place_data->component);
 
-  circuit_add_component(&simulation->circuit, &simulation->active_component);
-  simulation->active_component = (Component){0};
-  *(PlaceMode *)place_action->data = NotPlacing;
-  puts("Finished");
+  place_action->prevent_directly_switching_action = false;
+  place_data->mode = Positioning;
+  place_data->component.ptr = NULL;
 }
 
-static void add_placement(Simulation simulation[static 1],
-                          Action place_action[static 1]) {
-  Vector2 point = CLOSEST_VALID_GRID_VEC_FROM_MOUSE_POS;
-  printf("Point: {%f, %f}\n", point.x, point.y);
-  Wire *wire = (Wire *)simulation->active_component.ptr;
-  Vector2 last_point = wire->points[wire_last_i(wire)];
-  if (point.x == last_point.x && point.y == last_point.y) {
-    place_active_component(simulation, place_action);
+// Positioning
+static void update_positioning(Simulation simulation[static 1],
+                               Action place_action[static 1]) {
+  if (IsKeyPressed(KEY_ENTER)) {
+    place_component(simulation, place_action);
+  }
+}
+
+// Creation
+static void create_point(Action place_action[static 1], Vector2 point) {
+  PlaceData *place_data = (PlaceData *)place_action->data;
+  wire_add_point(&place_data->component, &point);
+  wire_add_point(&place_data->component, &point);
+}
+
+static void start_creation(Action place_action[static 1]) {
+  PlaceData *place_data = (PlaceData *)place_action->data;
+  puts("------------------------");
+  puts("Place Action - Creating!");
+  place_action->prevent_directly_switching_action = true;
+  place_data->mode = CreatingWire;
+
+  place_data->component = wire_new(WIRE_COLOUR);
+  create_point(place_action, CLOSEST_VALID_GRID_VEC_FROM_MOUSE_POS);
+}
+
+static void update_creation(Simulation simulation[static 1],
+                            Action place_action[static 1]) {
+  PlaceData *place_data = (PlaceData *)place_action->data;
+  Wire *wire = (Wire *)place_data->component.ptr;
+
+  if (IsKeyPressed(KEY_ENTER)) {
+    wire_del_point(&place_data->component, wire->points_len - 1);
+    place_component(simulation, place_action);
     return;
   }
-  wire_add_point(&simulation->active_component, &point);
-  wire_add_point(&simulation->active_component, &point);
-}
 
-static void start_placement(Simulation simulation[static 1],
-                            Action place_action[static 1]) {
-  // start creating
-  if (!memcmp(&simulation->active_component, &(Component){0},
-              sizeof(Component)) &&
-      CheckCollisionPointRec(GetMousePosition(), SIMULATION_AREA_RECT)) {
-    *(PlaceMode *)place_action->data = Creating;
-    puts("Making new wire");
-    simulation->active_component = wire_new(WIRE_COLOUR);
-    Wire *wire = (Wire *)simulation->active_component.ptr;
-    wire->is_last_set = true;
-
-    add_placement(simulation, place_action);
-  } else {
-    *(PlaceMode *)place_action->data = Positioning;
-    puts("Placing Active Component");
-    // place active component at Grid pos that corresponds to mouse pos
+  if (check_valid_click()) {
+    wire_del_point(&place_data->component, wire->points_len - 1);
+    Vector2 mouse_pos = CLOSEST_VALID_GRID_VEC_FROM_MOUSE_POS;
+    Vector2 last_point = wire->points[wire->points_len - 1];
+    if (last_point.x == mouse_pos.x && last_point.y == mouse_pos.y) {
+      place_component(simulation, place_action);
+      return;
+    }
+    create_point(place_action, mouse_pos);
   }
+
+  wire_set_last(wire, CLOSEST_VALID_GRID_VEC_FROM_MOUSE_POS);
 }
 
-void cancel_active_component(Simulation simulation[static 1],
-                             Action place_action[static 1]) {
-  COMPONENT_FN(simulation->active_component, free);
-  simulation->active_component = (Component){0};
-  *(PlaceMode *)place_action->data = NotPlacing;
-  puts("Cancelled");
+//  Action Functions
+inline static bool place_action_shortcut(void) { return IsKeyPressed(KEY_P); }
+
+static void place_action_cancel(Simulation _[static 1],
+                                Action place_action[static 1]) {
+  PlaceData *place_data = (PlaceData *)place_action->data;
+  place_action->active = false;
+  if (place_data->component.ptr != NULL) {
+    COMPONENT_FN(place_data->component, free)
+    place_data->component.ptr = NULL;
+  }
 }
 
 static void place_action_update(Simulation simulation[static 1],
                                 Action place_action[static 1]) {
-  if (action_activated(simulation, place_action)) {
-    switch (*(PlaceMode *)place_action->data) {
-    case NotPlacing:
-      start_placement(simulation, place_action);
-      break;
-    case Creating:
-      add_placement(simulation, place_action);
-      break;
-    case Positioning:
-      // TODO: place active_component
-      place_active_component(simulation, place_action);
-      break;
+  PlaceData *place_data = (PlaceData *)place_action->data;
+  if (!place_action->active) {
+    if (action_activated(simulation, place_action)) {
+      action_toggle(simulation, place_action);
+      place_data->mode = Positioning;
     }
+    return;
   }
 
-  if (*(PlaceMode *)place_action->data != NotPlacing) {
-    if (IsKeyPressed(KEY_ESCAPE)) {
-      cancel_active_component(simulation, place_action);
-    }
-    if (*(PlaceMode *)place_action->data == Creating) {
-      Vector2 dest_pos =
-          Vector2Clamp(CLOSEST_VALID_GRID_VEC_FROM_MOUSE_POS,
-                       VEC2(0, SIMULATION_AREA_Y), VEC2(WIDTH, HEIGHT));
+  if (IsKeyPressed(KEY_ESCAPE) || action_activated(simulation, place_action)) {
+    place_action_cancel(simulation, place_action);
+    return;
+  }
 
-      Wire *wire = (Wire *)simulation->active_component.ptr;
-      wire->is_last_set = true;
-      wire_set_last(wire, dest_pos);
-
-      if (IsKeyPressed(KEY_ENTER)) {
-        place_active_component(simulation, place_action);
-      }
+  if (place_data->mode == Positioning && place_data->component.ptr != NULL) {
+    update_positioning(simulation, place_action);
+  } else if (place_data->component.ptr == NULL) {
+    if (check_valid_click()) {
+      start_creation(place_action);
     }
+  } else {
+    update_creation(simulation, place_action);
   }
 }
 
-static void place_action_render() {
+static void place_action_render(const Simulation _[static 1],
+                                const Action place_action[static 1]) {
   // Draw
   DrawLineEx(VEC2(SIMULATION_AREA_X, SIMULATION_AREA_Y - 3),
              VEC2(SIMULATION_AREA_X + WIDTH, SIMULATION_AREA_Y - 3),
              PLACE_LINE_WIDTH, FG_COLOUR);
+
+  if (place_action->active) {
+    DrawCircleV(GetMousePosition(), 5, WIRE_COLOUR);
+
+    PlaceData *place_data = (PlaceData *)place_action->data;
+    if (place_data->component.ptr != NULL) {
+      COMPONENT_FN(place_data->component, render);
+    }
+  }
 }
 
 // Button
@@ -141,15 +165,18 @@ static Button PLACE_BUTTON = {
 static Action PLACE_ACTION = {
     .data = NULL,
     .active = false,
+    .allow_selection = false,
+    .prevent_directly_switching_action = false,
     .button = &PLACE_BUTTON,
     .shortcut_cond = place_action_shortcut,
+    .CANCEL_FN = place_action_cancel,
     .UPDATE_FN = place_action_update,
     .RENDER_FN = place_action_render,
 };
 
 Action *place_action_init(void) {
-  action_init(&PLACE_ACTION, sizeof(PlaceMode));
-  *(PlaceMode *)PLACE_ACTION.data = NotPlacing;
+  action_init(&PLACE_ACTION, sizeof(PlaceData));
+  ((PlaceData *)(PLACE_ACTION.data))->component.ptr = NULL;
 
   return &PLACE_ACTION;
 }

@@ -1,6 +1,7 @@
 #include "wire.h"
 #include "raylib.h"
 #include "utils.h"
+#include <assert.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,6 +30,7 @@ Component wire_new(Color colour) {
 
       // Information
       .is_hovered = wire_is_hovered,
+      .collides_rect = wire_collides_rect,
   };
 
   Wire *wire = (Wire *)component.ptr;
@@ -44,11 +46,12 @@ Component wire_new(Color colour) {
 }
 
 size_t wire_last_i(const Wire wire[static 1]) {
+  assert(wire->points_len != 0);
   return (wire->is_last_set) ? wire->points_len - 2 : wire->points_len - 1;
 }
 
 bool points_in_line(Vector2 point_a, Vector2 point_b) {
-  return (point_a.x == point_b.x || point_a.y == point_b.y);
+  return point_a.x == point_b.x || point_a.y == point_b.y;
 }
 
 bool wire_contains_point(Wire wire[static 1], Vector2 point,
@@ -71,7 +74,7 @@ bool wire_contains_point(Wire wire[static 1], Vector2 point,
 void wire_add_point(const Component wire_component[static 1],
                     const void *POINT) {
   Wire *wire = (Wire *)wire_component->ptr;
-  // TODO: implmenet corners here
+  // TODO: implement corners here
 
   if (wire->points_len + 1 > wire->points_capacity) {
     wire->points_capacity *= 2;
@@ -86,23 +89,25 @@ void wire_add_point(const Component wire_component[static 1],
 #endif
   }
 
-  size_t last_i = wire_last_i(wire);
-  Vector2 point_a = wire->points[last_i];
-  Vector2 point_b = *(Vector2 *)POINT;
+  if (wire->points_len > 0) {
+    size_t last_i = wire_last_i(wire);
+    Vector2 point_a = wire->points[last_i];
+    Vector2 point_b = *(Vector2 *)POINT;
 
-  // TODO: change drawing corners like this to be put when creating wires
-  if (!points_in_line(point_a, point_b)) {
-    Vector2 point_c;
-    if (fabsf(point_a.x - point_b.x) > fabsf(point_a.y - point_b.y) &&
-        wire_contains_point(wire, VEC2(point_b.x, point_a.y), false)) {
-      point_c = (Vector2){point_b.x, point_a.y};
-    } else {
-      point_c = (Vector2){point_a.x, point_b.y};
+    // TODO: change drawing corners like this to be put when creating wires
+    if (!points_in_line(point_a, point_b)) {
+      Vector2 point_c;
+      if (fabsf(point_a.x - point_b.x) > fabsf(point_a.y - point_b.y) &&
+          wire_contains_point(wire, VEC2(point_b.x, point_a.y), false)) {
+        point_c = (Vector2){point_b.x, point_a.y};
+      } else {
+        point_c = (Vector2){point_a.x, point_b.y};
+      }
+      wire_add_point(wire_component, &point_c);
     }
-    wire_add_point(wire_component, &point_c);
   }
 
-  wire->points[wire->points_len - 1] = *(Vector2 *)POINT;
+  wire->points[wire->points_len] = *(Vector2 *)POINT;
   wire->points_len++;
 }
 
@@ -118,11 +123,10 @@ void wire_del_point(const Component wire_component[static 1], size_t ind) {
   }
 
   wire->points_len--;
-  wire->points = realloc(wire->points, sizeof(Vector2) * wire->points_len);
-  if (wire->points == NULL) {
-    fprintf(stderr, "Failed to Realloc !");
-    exit(EXIT_FAILURE);
-  }
+
+#ifndef NDEBUG
+  memset(&wire->points[wire->points_len], 0, sizeof(Vector2));
+#endif
 }
 
 void wire_clear(const Component wire_component[static 1]) {
@@ -172,35 +176,102 @@ void wire_render(const Component wire_component[static 1]) {
   for (size_t i = 1; i < wire->points_len; i++) {
     wire_render_segment(wire, i, WIRE_THICKNESS);
   }
+  DrawCircleV(wire->points[0], WIRE_THICKNESS, WIRE_END_COLOUR);
+  DrawCircleV(wire->points[wire->points_len - 1], WIRE_THICKNESS,
+              WIRE_END_COLOUR);
+}
+
+Vector2 get_extended_point(Vector2 first, Vector2 second) {
+#define EXTENSION 2
+  Vector2 point = first;
+
+  if (first.x == second.x) {
+    point.y += copysignf(EXTENSION, first.y - second.y);
+  } else {
+    assert(first.y == second.y);
+    point.x += copysignf(EXTENSION, first.x - second.x);
+  }
+
+  return point;
 }
 
 void wire_render_highlight(const Component wire_component[static 1]) {
   Wire *wire = (Wire *)wire_component->ptr;
   Color old_colour = wire->colour;
+  Vector2 old_start = wire->points[0];
+  Vector2 old_end = wire->points[wire->points_len - 1];
+
   wire->colour = WIRE_HIGHLIGHTED_COLOUR;
+  if (wire->points_len > 1) {
+    wire->points[0] = get_extended_point(wire->points[0], wire->points[1]);
+    wire->points[wire->points_len - 1] = get_extended_point(
+        wire->points[wire->points_len - 1], wire->points[wire->points_len - 2]);
+  }
 
   for (size_t i = 1; i < wire->points_len; i++) {
     wire_render_segment(wire, i, WIRE_HIGHLIGHTED_THICKNESS);
   }
 
   wire->colour = old_colour;
+  if (wire->points_len > 1) {
+    wire->points[0] = old_start;
+    wire->points[wire->points_len - 1] = old_end;
+  }
 }
 
 // render_run
 
-static bool is_val_between_vals(float val, float val_a, float val_b) {
-  return val >= fminf(val_a, val_b) && val <= fmaxf(val_a, val_b);
-}
-
 bool wire_is_hovered(const Component wire_component[static 1]) {
   Wire *wire = (Wire *)wire_component->ptr;
   for (size_t i = 1; i < wire->points_len; i++) {
-    if (CheckCollisionPointLine(CLOSEST_VALID_GRID_VEC_FROM_MOUSE_POS,
-                                wire->points[i - 1], wire->points[i],
-                                GRID_VAL_TO_COORD(0.75))) {
+    if (CheckCollisionPointLine(GetMousePosition(), wire->points[i - 1],
+                                wire->points[i], GRID_VAL_TO_COORD(0.75))) {
       return true;
     }
   }
 
+  return false;
+}
+
+static bool line_collides_rect(Vector2 point_a, Vector2 point_b,
+                               Rectangle rect) {
+  Vector2 top[2] = {VEC2(rect.x, rect.y), VEC2(rect.x + rect.width, rect.y)};
+  Vector2 bottom[2] = {VEC2(rect.x, rect.y + rect.height),
+                       VEC2(rect.x + rect.width, rect.y + rect.height)};
+  Vector2 left[2] = {VEC2(rect.x, rect.y), VEC2(rect.x, rect.y + rect.height)};
+  Vector2 right[2] = {VEC2(rect.x + rect.width, rect.y),
+                      VEC2(rect.x + rect.width, rect.y + rect.height)};
+  if (CheckCollisionLines(point_a, point_b, top[0], top[1], NULL)) {
+    return true;
+  }
+  if (CheckCollisionLines(point_a, point_b, bottom[0], bottom[1], NULL)) {
+    return true;
+  }
+  if (CheckCollisionLines(point_a, point_b, left[0], left[1], NULL)) {
+    return true;
+  }
+  if (CheckCollisionLines(point_a, point_b, right[0], right[1], NULL)) {
+    return true;
+  }
+
+  if (CheckCollisionPointRec(point_a, rect) ||
+      CheckCollisionPointRec(point_b, rect)) {
+    return true;
+  }
+
+  return false;
+}
+
+bool wire_collides_rect(const Component wire_component[static 1],
+                        Rectangle rect) {
+  Wire *wire = (Wire *)wire_component->ptr;
+  if (wire->points_len < 2) {
+    return false;
+  }
+  for (size_t i = 1; i < wire->points_len; i++) {
+    if (line_collides_rect(wire->points[i - 1], wire->points[i], rect)) {
+      return true;
+    }
+  }
   return false;
 }

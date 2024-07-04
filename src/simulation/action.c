@@ -1,6 +1,7 @@
 #include "action.h"
 #include "button.h"
 #include "simulation.h"
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -25,7 +26,7 @@ bool action_activated(Simulation simulation[static 1],
       (action->shortcut_cond) ? action->shortcut_cond() : false;
 
   return (button_event || shortcut_event) &&
-         !simulation_other_action_active(simulation, action);
+         !simulation_other_action_prevent_switch(simulation, action);
 }
 
 void action_update(Simulation *simulation, Action action[static 1]) {
@@ -48,5 +49,26 @@ void action_render(const Simulation *const SIMULATION,
 void action_free(Action action[static 1]) {
   if (action->data != NULL) {
     free(action->data);
+  }
+}
+
+void action_activate(Simulation *simulation, Action action[static 1]) {
+  size_t i;
+  for (i = 0; i < N_ACTIONS; i++) {
+    if (simulation->actions[i]->active) {
+      assert(action->CANCEL_FN != NULL);
+      simulation->actions[i]->CANCEL_FN(simulation, simulation->actions[i]);
+    }
+  }
+
+  action->active = true;
+}
+
+void action_toggle(Simulation *simulation, Action action[static 1]) {
+  if (action->active) {
+    assert(action->CANCEL_FN != NULL);
+    action->CANCEL_FN(simulation, action);
+  } else {
+    action_activate(simulation, action);
   }
 }

@@ -1,56 +1,60 @@
 #include "action.h"
 #include "circuit.h"
+#include "component_group.h"
 #include "raylib.h"
 #include "simulation.h"
 #include "utils.h"
+#include <assert.h>
 #include <limits.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #define DEL_X GRID_VAL_TO_COORD(13)
 #define DEL_Y GRID_VAL_TO_COORD(1)
 #define DEL_TXT "Delete"
 
 // Functions
-static bool del_action_shorcut(void) {
-  return IsKeyPressed(KEY_D) &&
-         (IsKeyDown(KEY_RIGHT_SHIFT) || IsKeyDown(KEY_LEFT_SHIFT));
+static bool del_action_shortcut(void) { return IsKeyPressed(KEY_D); }
+
+static void del_selected(Simulation simulation[static 1]) {
+  assert(simulation->selected.component_len != 0);
+
+  circuit_del_components(&simulation->circuit, &simulation->selected);
+  component_group_clear(&simulation->selected);
+}
+static void del_action_cancel(Simulation _[static 1],
+                              Action del_action[static 1]) {
+  del_action->active = false;
+  puts("Finished Deletion");
 }
 
-// TODO:: add activated action state
 static void del_action_update(Simulation simulation[static 1],
                               Action del_action[static 1]) {
 
   if (action_activated(simulation, del_action)) {
-    del_action->active = !del_action->active;
-    printf("Activated Delete Action!, Data: %hhu\n", del_action->active);
+    action_toggle(simulation, del_action);
+  }
+
+  if (IsKeyPressed(KEY_BACKSPACE)) {
+    if (simulation->selected.component_len != 0) {
+      del_selected(simulation);
+    }
   }
 
   if (del_action->active) {
-    size_t hovered_i = simulation_get_hovered_component(simulation);
-    *(size_t *)del_action->data = hovered_i;
-    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && hovered_i != SIZE_T_MAX) {
-      circuit_del_component(&simulation->circuit, hovered_i);
+    if (simulation->selected.component_len != 0) {
+      del_selected(simulation);
     }
 
     if (IsKeyPressed(KEY_ESCAPE)) {
-      del_action->active = false;
-      puts("Cancelled Deletion");
+      del_action_cancel(simulation, del_action);
     }
   }
-  // TODO: implement
 }
 
-static void del_action_render(const Simulation simulation[static 1],
+static void del_action_render(const Simulation _[static 1],
                               const Action del_action[static 1]) {
   if (del_action->active) {
-    size_t hovered_i = *(size_t *)del_action->data;
-
-    if (hovered_i != SIZE_T_MAX) {
-      Circuit *circuit = (Circuit *)simulation->circuit.ptr;
-
-      COMPONENT_FN(circuit->components[hovered_i], render_highlight);
-    }
-
     DrawRectangle(GetMouseX() - 10, GetMouseY() - 10, 20, 20, FG_COLOUR);
   }
 }
@@ -65,16 +69,18 @@ static Button DEL_BUTTON = {
 static Action DEL_ACTION = {
     .data = NULL,
     .active = false,
+    .allow_selection = true,
     .button = &DEL_BUTTON,
-    .shortcut_cond = del_action_shorcut,
+    .shortcut_cond = del_action_shortcut,
+    .CANCEL_FN = del_action_cancel,
     .UPDATE_FN = del_action_update,
     .RENDER_FN = del_action_render,
 };
 
 Action *delete_action_init(void) {
   // Initializing
-  action_init(&DEL_ACTION, sizeof(size_t));
-  *(size_t *)DEL_ACTION.data = SIZE_T_MAX;
+  // action_init(&DEL_ACTION, sizeof(size_t));
+  // *(size_t *)DEL_ACTION.data = SIZE_T_MAX;
 
   return &DEL_ACTION;
 }

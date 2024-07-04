@@ -40,6 +40,7 @@ typedef struct Component {
 
   // Information
   bool (*is_hovered)(const Component *const SELF);
+  bool (*collides_rect)(const Component *const SELF, Rectangle rect);
 
   ComponentPoint *ends;
 } Component;

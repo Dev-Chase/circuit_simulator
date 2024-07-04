@@ -3,6 +3,7 @@
 #define CIRCUIT_H
 
 #include "component.h"
+#include "component_group.h"
 #include <stddef.h>
 #ifdef _cplusplus
 extern "C" {
@@ -26,6 +27,8 @@ void circuit_add_component(const Component circuit_component[static 1],
                            const void *COMPONENT);
 void circuit_del_component(const Component circuit_component[static 1],
                            size_t ind);
+void circuit_del_components(const Component circuit_component[static 1],
+                            ComponentGroup components[static 1]);
 void circuit_clear(const Component circuit_component[static 1]);
 void circuit_free(Component circuit_component[static 1]);
 
@@ -41,6 +44,8 @@ void circuit_render_run(const Component circuit_component[static 1]);
 
 // Information
 bool circuit_is_hovered(const Component circuit_component[static 1]);
+bool circuit_collides_rect(const Component circuit_component[static 1],
+                           Rectangle rect);
 
 #ifdef _cplusplus
 }

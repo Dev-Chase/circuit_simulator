@@ -3,8 +3,7 @@
 #include "constants.h"
 #include "raylib.h"
 #include "simulation.h"
-#include "utils.h"
-#include <assert.h>
+#include "utils.h" #include < assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,18 +29,27 @@ static bool stop_action_shortcut(void) {
          IsKeyPressed(KEY_SPACE);
 }
 
+static void run_action_cancel(Simulation _[static 1],
+                              Action run_action[static 1]) {
+  run_action->active = false;
+  puts("Stopped Running");
+  run_action->shortcut_cond = run_action_shortcut;
+  button_set_state(run_action->button, RUN_TXT, RUN_BG);
+}
+
 static void run_action_update(Simulation simulation[static 1],
                               Action run_action[static 1]) {
   if (action_activated(simulation, run_action)) {
-    run_action->active = !run_action->active;
+    action_toggle(simulation, run_action);
 
     if (run_action->active) {
+      puts("Started Running");
       run_action->shortcut_cond = stop_action_shortcut;
       button_set_state(run_action->button, STOP_TXT, STOP_BG);
-    } else {
-      run_action->shortcut_cond = run_action_shortcut;
-      button_set_state(run_action->button, RUN_TXT, RUN_BG);
     }
+  }
+  if (IsKeyPressed(KEY_ESCAPE) && run_action->active) {
+    run_action_cancel(simulation, run_action);
   }
 }
 
@@ -56,8 +64,11 @@ static Button RUN_BUTTON = {
 static Action RUN_ACTION = {
     .data = NULL,
     .active = false,
+    .allow_selection = false,
+    .prevent_directly_switching_action = true,
     .button = &RUN_BUTTON,
     .shortcut_cond = run_action_shortcut,
+    .CANCEL_FN = run_action_cancel,
     .UPDATE_FN = run_action_update,
     .RENDER_FN = NULL,
 };

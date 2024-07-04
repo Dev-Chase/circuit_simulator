@@ -8,6 +8,9 @@
 extern "C" {
 #endif
 
+// Utility Functions
+Vector2 vector2_min(Vector2 a, Vector2 b);
+
 // Utility Macros
 #define VECTOR2(x_val, y_val)                                                  \
   (Vector2) { .x = x_val, .y = y_val }
