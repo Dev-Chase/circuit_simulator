@@ -22,10 +22,10 @@ Simulation simulation_new(void) {
                 delete_action_init(),
                 select_action_init(),
             },
-        // .selected_component = {0},
-        .selected = component_group_new(),
-        .hovered = component_group_new(),
         .hovered_i = SIZE_T_MAX,
+        .hovered = component_group_new(),
+        .selected = component_group_new(),
+        .removing = component_group_new(),
         .circuit = circuit_new(NULL, 0, 0),
         .running = false,
     };
@@ -72,7 +72,8 @@ static bool simulation_should_deselect(const Simulation simulation[static 1]) {
                              SIMULATION_AREA_RECT);
   bool is_shift_down = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT);
 
-  return ((!any_hovered && valid_click) || IsKeyPressed(KEY_ESCAPE) ||
+  return ((!any_hovered && valid_click && !is_shift_down) ||
+          IsKeyPressed(KEY_ESCAPE) ||
           (valid_click && any_hovered && !is_shift_down)) &&
          simulation->selected.component_len != 0;
 }
@@ -104,11 +105,18 @@ void simulation_update(Simulation simulation[static 1]) {
   }
 }
 
+void simulation_highlight_component(const Simulation simulation[static 1],
+                                    size_t ind) {
+  if (!component_group_contains(&simulation->removing, ind)) {
+    Circuit *sim_circuit = (Circuit *)simulation->circuit.ptr;
+    COMPONENT_FN(sim_circuit->components[ind], render_highlight);
+  }
+}
+
 void simulation_highlight_selected(const Simulation simulation[static 1]) {
-  Circuit *sim_circuit = (Circuit *)simulation->circuit.ptr;
   for (size_t i = 0; i < simulation->selected.component_len; i++) {
-    COMPONENT_FN(sim_circuit->components[simulation->selected.component_is[i]],
-                 render_highlight)
+    simulation_highlight_component(simulation,
+                                   simulation->selected.component_is[i]);
   }
 }
 
@@ -118,8 +126,8 @@ void simulation_render(const Simulation simulation[static 1]) {
   // Highlighting
   if (simulation_should_highlight(simulation)) {
     for (size_t i = 0; i < simulation->hovered.component_len; i++) {
-      COMPONENT_FN(sim_circuit->components[simulation->hovered.component_is[i]],
-                   render_highlight)
+      simulation_highlight_component(simulation,
+                                     simulation->hovered.component_is[i]);
     }
     simulation_highlight_selected(simulation);
   }

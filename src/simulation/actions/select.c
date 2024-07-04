@@ -3,7 +3,6 @@
 #include "component.h"
 #include "component_group.h"
 #include "raylib.h"
-#include "raymath.h"
 #include "simulation.h"
 #include "utils.h"
 #include <assert.h>
@@ -17,15 +16,24 @@ static bool select_action_shortcut(void) {
          CheckCollisionPointRec(GetMousePosition(), SIMULATION_AREA_RECT);
 }
 
-static void select_action_cancel(Simulation simulation[static 1],
-                                 Action select_action[static 1]) {
+static void select_hovered(Simulation simulation[static 1]) {
   if (simulation->hovered.component_len > 0) {
-    component_group_clear(&simulation->selected);
+    // component_group_clear(&simulation->selected);
     for (size_t i = 0; i < simulation->hovered.component_len; i++) {
-      component_group_add(&simulation->selected,
-                          simulation->hovered.component_is[i]);
+      if (component_group_contains(&simulation->removing,
+                                   simulation->hovered.component_is[i])) {
+        component_group_remove(&simulation->selected,
+                               simulation->hovered.component_is[i]);
+      } else {
+        component_group_add(&simulation->selected,
+                            simulation->hovered.component_is[i]);
+      }
     }
   }
+}
+
+static void select_action_cancel(Simulation _[static 1],
+                                 Action select_action[static 1]) {
   select_action->active = false;
 }
 
@@ -42,6 +50,9 @@ static void select_action_active_update(Simulation simulation[static 1],
             RECT(top_left.x, top_left.y, fabsf(mouse_pos.x - start_mouse_pos.x),
                  fabsf(mouse_pos.y - start_mouse_pos.y)))) {
       component_group_add(&simulation->hovered, i);
+      if (component_group_contains(&simulation->selected, i)) {
+        component_group_add(&simulation->removing, i);
+      }
     }
   }
 }
@@ -49,17 +60,22 @@ static void select_action_active_update(Simulation simulation[static 1],
 static void select_action_inactive_update(Simulation simulation[static 1]) {
   if (simulation->hovered_i != SIZE_T_MAX) {
     component_group_add(&simulation->hovered, simulation->hovered_i);
+    if (component_group_contains(&simulation->selected,
+                                 simulation->hovered_i) &&
+        (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))) {
+      component_group_add(&simulation->removing, simulation->hovered_i);
+    }
   }
 
   if (simulation->hovered_i != SIZE_T_MAX &&
       IsMouseButtonPressed(MOUSE_BUTTON_LEFT) &&
       CheckCollisionPointRec(CLOSEST_VALID_GRID_VEC_FROM_MOUSE_POS,
                              SIMULATION_AREA_RECT)) {
-    if (!component_group_contains(&simulation->selected,
-                                  simulation->hovered_i)) {
-      component_group_add(&simulation->selected, simulation->hovered_i);
-    } else {
+    if (component_group_contains(&simulation->removing,
+                                 simulation->hovered_i)) {
       component_group_remove(&simulation->selected, simulation->hovered_i);
+    } else {
+      component_group_add(&simulation->selected, simulation->hovered_i);
     }
   }
 }
@@ -69,16 +85,23 @@ static void select_action_update(Simulation simulation[static 1],
   if (action_activated(simulation, select_action) &&
       simulation->hovered_i == SIZE_T_MAX) {
     select_action->active = true;
-    *(Vector2 *)select_action->data = CLOSEST_VALID_GRID_VEC_FROM_MOUSE_POS;
+    *(Vector2 *)select_action->data = GetMousePosition();
   }
 
   component_group_clear(&simulation->hovered);
+  component_group_clear(&simulation->removing);
   if (select_action->active) {
     if (simulation_should_highlight(simulation)) {
       select_action_active_update(simulation, select_action);
     }
 
-    if (IsKeyPressed(KEY_ESCAPE) || !IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+    if (IsKeyPressed(KEY_ESCAPE)) {
+      select_action_cancel(simulation, select_action);
+      return;
+    }
+
+    if (!IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+      select_hovered(simulation);
       select_action_cancel(simulation, select_action);
       return;
     }

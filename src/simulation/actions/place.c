@@ -78,8 +78,10 @@ static void update_creation(Simulation simulation[static 1],
   Wire *wire = (Wire *)place_data->component.ptr;
 
   if (IsKeyPressed(KEY_ENTER)) {
-    wire_del_point(&place_data->component, wire->points_len - 1);
-    place_component(simulation, place_action);
+    if (wire->points_len > 2) {
+      wire_del_point(&place_data->component, wire->points_len - 1);
+      place_component(simulation, place_action);
+    }
     return;
   }
 

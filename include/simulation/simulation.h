@@ -27,11 +27,10 @@ Action *select_action_init(void);
 typedef struct Simulation {
   Action *actions[N_ACTIONS];
   Component circuit;
-  ComponentGroup hovered;
   size_t hovered_i;
-  // Component selected_component;
+  ComponentGroup hovered;
   ComponentGroup selected;
-  // Component placing_component;
+  ComponentGroup removing;
   bool running; // TODO: implement
 } Simulation;
 
