@@ -1,7 +1,6 @@
 #include "wire.h"
+#include "component_io_pins.h"
 #include "raylib.h"
-#include "raymath.h"
-#include "simulation.h"
 #include "utils.h"
 #include <assert.h>
 #include <math.h>
@@ -23,7 +22,7 @@ Component wire_new(Color colour) {
       // Action Functions
       // .save = wire_save,//TODO: implement
       // .run = wire_run, TODO: implement
-      // .place = wire_place, TODO: implement
+      .place = wire_place,
 
       // Rendering
       .render = wire_render,
@@ -33,7 +32,11 @@ Component wire_new(Color colour) {
       // Information
       .is_hovered = wire_is_hovered,
       .collides_rect = wire_collides_rect,
+
+      // IOPins
+      .pins = component_io_pins_new(),
   };
+  uuid_generate_random(component.id);
 
   Wire *wire = (Wire *)component.ptr;
   *wire = (Wire){
@@ -144,15 +147,17 @@ void wire_clear(const Component wire_component[static 1]) {
 void wire_free(Component wire_component[static 1]) {
   Wire *wire = (Wire *)wire_component->ptr;
   free(wire->points);
-
-#ifndef NDEBUG
-  wire->points = NULL;
-  wire->points_len = 0;
-  wire->points_capacity = 0;
-#endif
+  free(wire);
 }
 
-// save, run, place
+// save, run
+
+void wire_place(Component wire_component[static 1], Vector2 _) {
+  Wire *wire = (Wire *)wire_component->ptr;
+  component_io_pins_add_position(&wire_component->pins, wire->points[0]);
+  component_io_pins_add_position(&wire_component->pins,
+                                 wire->points[wire->points_len - 1]);
+}
 
 void wire_render_segment(Wire wire[static 1], size_t i, int thickness) {
   Vector2 point_a = wire->points[i - 1];
@@ -179,9 +184,12 @@ void wire_render(const Component wire_component[static 1]) {
   for (size_t i = 1; i < wire->points_len; i++) {
     wire_render_segment(wire, i, WIRE_THICKNESS);
   }
-  DrawCircleV(wire->points[0], WIRE_THICKNESS, WIRE_END_COLOUR);
-  DrawCircleV(wire->points[wire->points_len - 1], WIRE_THICKNESS,
-              WIRE_END_COLOUR);
+  if (wire_component->pins.pin_len == 2) {
+    DrawCircleV(wire_component->pins.pins[0].grid_pos, WIRE_THICKNESS,
+                WIRE_END_COLOUR);
+    DrawCircleV(wire_component->pins.pins[1].grid_pos, WIRE_THICKNESS,
+                WIRE_END_COLOUR);
+  }
 }
 
 Vector2 get_extended_point(Vector2 first, Vector2 second) {

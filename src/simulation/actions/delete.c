@@ -1,13 +1,16 @@
 #include "action.h"
 #include "circuit.h"
+#include "component.h"
 #include "component_group.h"
 #include "raylib.h"
 #include "simulation.h"
+#include "undo_list.h"
 #include "utils.h"
 #include <assert.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define DEL_X GRID_VAL_TO_COORD(13)
 #define DEL_Y GRID_VAL_TO_COORD(1)
@@ -16,10 +19,52 @@
 // Functions
 static bool del_action_shortcut(void) { return IsKeyPressed(KEY_D); }
 
-static void del_selected(Simulation simulation[static 1]) {
-  assert(simulation->selected.component_len != 0);
+// TODO: find error
+void del_action_undo_expired(UndoProc proc[static 1]) {
+  size_t component_len = proc->size / sizeof(Component);
+  Component *components = (Component *)proc->data;
+  for (size_t i = 0; i < component_len; i++) {
+    COMPONENT_FN(components[i], free)
+  }
+  free(components);
+#ifndef NDEBUG
+  memset(proc, 0, sizeof(UndoProc));
+#endif
+}
 
-  circuit_del_components(&simulation->circuit, &simulation->selected);
+void del_action_undo(Simulation simulation[static 1], UndoProc proc[static 1]) {
+  size_t component_len = proc->size / sizeof(Component);
+  Component *components = (Component *)proc->data;
+  for (size_t i = 0; i < component_len; i++) {
+    circuit_append_component(&simulation->circuit, (void *)&(components[i]));
+  }
+}
+
+static void del_action_create_undo(Simulation simulation[static 1]) {
+  Circuit *sim_circuit = (Circuit *)simulation->circuit.ptr;
+
+  size_t data_size = simulation->selected.len * sizeof(Component);
+  Component *data = (Component *)malloc(data_size);
+  for (size_t i = 0; i < simulation->selected.len; i++) {
+    size_t component_i =
+        circuit_get_i_from_id(sim_circuit, simulation->selected.ids[i]);
+    data[i] = sim_circuit->components[component_i];
+  }
+
+  undo_list_append(&simulation->undo_list,
+                   (UndoProc){
+                       .fn = del_action_undo,
+                       .expired_fn = del_action_undo_expired,
+                       .data = data,
+                       .size = data_size,
+                   });
+}
+
+static void del_selected(Simulation simulation[static 1]) {
+  assert(simulation->selected.len != 0);
+
+  del_action_create_undo(simulation);
+  circuit_remove_group(&simulation->circuit, &simulation->selected);
   component_group_clear(&simulation->selected);
 }
 static void del_action_cancel(Simulation _[static 1],
@@ -36,13 +81,13 @@ static void del_action_update(Simulation simulation[static 1],
   }
 
   if (IsKeyPressed(KEY_BACKSPACE)) {
-    if (simulation->selected.component_len != 0) {
+    if (simulation->selected.len != 0) {
       del_selected(simulation);
     }
   }
 
   if (del_action->active) {
-    if (simulation->selected.component_len != 0) {
+    if (simulation->selected.len != 0) {
       del_selected(simulation);
     }
 

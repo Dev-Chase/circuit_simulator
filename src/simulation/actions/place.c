@@ -32,14 +32,38 @@ inline static bool check_valid_click(void) {
 }
 
 // Action Wide Functions
+// void place_action_undo(Simulation simulation[static 1],
+//                        UndoProc proc[static 1]) {
+//   size_t component_len = proc->size / sizeof(Component);
+//   Component *components = (Component *)proc->data;
+//   for (size_t i = 0; i < component_len; i++) {
+//     circuit_add_component(&simulation->circuit, (void *)&components[i]);
+//   }
+// }
+//
+// static void place_action_create_undo(Simulation simulation[static 1],
+//                                      Action place_action[static 1]) {
+//   size_t data_size = simulation->selected.component_len * sizeof(Component);
+//   Component *component_data = (Component *)malloc(data_size);
+//   Circuit *sim_circuit = (Circuit *)simulation->circuit.ptr;
+//   for (size_t i = 0; i < simulation->selected.component_len; i++) {
+//     component_data[i] =
+//         sim_circuit->components[simulation->selected.component_is[i]];
+//   }
+//
+//   undo_list_add(&simulation->undo_list, (UndoProc){
+//                                             .fn = place_action_undo,
+//                                             .data = component_data,
+//                                             .size = data_size,
+//                                         });
+// }
+
 static void place_component(Simulation simulation[static 1],
                             Action place_action[static 1]) {
   PlaceData *place_data = (PlaceData *)place_action->data;
-  if (place_data->mode == Positioning) {
-    COMPONENT_FN_PARAMS(place_data->component, place,
-                        CLOSEST_VALID_GRID_VEC_FROM_MOUSE_POS)
-  }
-  circuit_add_component(&simulation->circuit, &place_data->component);
+  COMPONENT_FN_PARAMS(place_data->component, place,
+                      CLOSEST_VALID_GRID_VEC_FROM_MOUSE_POS)
+  circuit_append_component(&simulation->circuit, &place_data->component);
 
   place_action->prevent_directly_switching_action = false;
   place_data->mode = Positioning;

@@ -21,7 +21,9 @@ Simulation simulation_new(void) {
                 place_action_init(),
                 delete_action_init(),
                 select_action_init(),
+                undo_action_init(),
             },
+        .undo_list = undo_list_new(),
         .hovered_i = SIZE_T_MAX,
         .hovered = component_group_new(),
         .selected = component_group_new(),
@@ -63,9 +65,8 @@ size_t simulation_get_hovered(Simulation simulation[static 1]) {
   return SIZE_T_MAX;
 }
 
-// TODO: implement multiple selection
 static bool simulation_should_deselect(const Simulation simulation[static 1]) {
-  bool any_hovered = simulation->hovered.component_len != 0;
+  bool any_hovered = simulation->hovered.len != 0;
   bool valid_click =
       IsMouseButtonPressed(MOUSE_BUTTON_LEFT) &&
       CheckCollisionPointRec(CLOSEST_VALID_GRID_VEC_FROM_MOUSE_POS,
@@ -75,7 +76,7 @@ static bool simulation_should_deselect(const Simulation simulation[static 1]) {
   return ((!any_hovered && valid_click && !is_shift_down) ||
           IsKeyPressed(KEY_ESCAPE) ||
           (valid_click && any_hovered && !is_shift_down)) &&
-         simulation->selected.component_len != 0;
+         simulation->selected.len != 0;
 }
 
 bool simulation_should_highlight(const Simulation simulation[static 1]) {
@@ -89,7 +90,11 @@ bool simulation_should_highlight(const Simulation simulation[static 1]) {
   }
 
   return true;
-  // return simulation->hovered.component_len != 0;
+}
+
+int compare_components(const void *component_a, const void *component_b) {
+  return COMPONENT_FN_RETURNS((*(Component *)component_a), is_hovered) &&
+         !COMPONENT_FN_RETURNS((*(Component *)component_b), is_hovered);
 }
 
 void simulation_update(Simulation simulation[static 1]) {
@@ -106,17 +111,17 @@ void simulation_update(Simulation simulation[static 1]) {
 }
 
 void simulation_highlight_component(const Simulation simulation[static 1],
-                                    size_t ind) {
-  if (!component_group_contains(&simulation->removing, ind)) {
+                                    uuid_t id) {
+  if (!component_group_contains(&simulation->removing, id)) {
     Circuit *sim_circuit = (Circuit *)simulation->circuit.ptr;
-    COMPONENT_FN(sim_circuit->components[ind], render_highlight);
+    size_t component_i = circuit_get_i_from_id(sim_circuit, id);
+    COMPONENT_FN(sim_circuit->components[component_i], render_highlight);
   }
 }
 
 void simulation_highlight_selected(const Simulation simulation[static 1]) {
-  for (size_t i = 0; i < simulation->selected.component_len; i++) {
-    simulation_highlight_component(simulation,
-                                   simulation->selected.component_is[i]);
+  for (size_t i = 0; i < simulation->selected.len; i++) {
+    simulation_highlight_component(simulation, simulation->selected.ids[i]);
   }
 }
 
@@ -125,9 +130,8 @@ void simulation_render(const Simulation simulation[static 1]) {
 
   // Highlighting
   if (simulation_should_highlight(simulation)) {
-    for (size_t i = 0; i < simulation->hovered.component_len; i++) {
-      simulation_highlight_component(simulation,
-                                     simulation->hovered.component_is[i]);
+    for (size_t i = 0; i < simulation->hovered.len; i++) {
+      simulation_highlight_component(simulation, simulation->hovered.ids[i]);
     }
     simulation_highlight_selected(simulation);
   }
@@ -148,4 +152,9 @@ void simulation_free(Simulation simulation[static 1]) {
   for (size_t i = 0; i < N_ACTIONS; i++) {
     action_free(simulation->actions[i]);
   }
+
+  component_group_free(&simulation->selected);
+  component_group_free(&simulation->hovered);
+  component_group_free(&simulation->removing);
+  undo_list_free(&simulation->undo_list);
 }

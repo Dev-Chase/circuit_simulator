@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <uuid/uuid.h>
 
 #define DEFAULT_CIRCUIT_COMPONENT_LEN 20
 Component circuit_new(const char *path, float tile_width, float tile_height) {
@@ -12,8 +13,8 @@ Component circuit_new(const char *path, float tile_width, float tile_height) {
       .ptr = malloc(sizeof(Circuit)),
 
       // Data Manipulation
-      .add_data = circuit_add_component,
-      .del_data = circuit_del_component,
+      .add_data = circuit_append_component,
+      .del_data = circuit_remove_component,
       .clear = circuit_clear,
       .free = circuit_free,
 
@@ -31,6 +32,7 @@ Component circuit_new(const char *path, float tile_width, float tile_height) {
       .is_hovered = circuit_is_hovered,
       .collides_rect = circuit_collides_rect,
   };
+  uuid_generate_random(component.id);
 
   *(Circuit *)component.ptr = (Circuit){
       .path = path,
@@ -44,8 +46,8 @@ Component circuit_new(const char *path, float tile_width, float tile_height) {
   return component;
 }
 
-void circuit_add_component(const Component circuit_component[static 1],
-                           const void *const COMPONENT) {
+void circuit_append_component(const Component circuit_component[static 1],
+                              const void *const COMPONENT) {
   Circuit *circuit = (Circuit *)circuit_component->ptr;
   if (circuit->components_len > circuit->components_capacity) {
     circuit->components_capacity *= 2;
@@ -61,12 +63,29 @@ void circuit_add_component(const Component circuit_component[static 1],
   circuit->components_len++;
 }
 
-void circuit_del_component(const Component circuit_component[static 1],
-                           size_t ind) {
+size_t circuit_get_i_from_id(const Circuit circuit[static 1], uuid_t id) {
+  size_t i;
+  for (i = 0; i < circuit->components_len; i++) {
+    if (uuid_compare(circuit->components[i].id, id) == 0) {
+      break;
+    }
+  }
+
+  if (i == circuit->components_len) {
+    perror("invalid ID");
+    exit(EXIT_FAILURE);
+  }
+
+  return i;
+}
+
+// NOTE: does not free
+void circuit_remove_component(const Component circuit_component[static 1],
+                              size_t ind) {
   Circuit *circuit = (Circuit *)circuit_component->ptr;
 
   assert(circuit->components[ind].ptr != NULL);
-  COMPONENT_FN(circuit->components[ind], free)
+  // COMPONENT_FN(circuit->components[ind], free)
 
 #ifndef NDEBUG
   memset(&circuit->components[ind], 0, sizeof(Component));
@@ -83,12 +102,23 @@ int compare_indeces(const void *a, const void *b) {
   return *(size_t *)a < *(size_t *)b;
 }
 
-void circuit_del_components(const Component circuit_component[static 1],
-                            ComponentGroup components[static 1]) {
-  qsort(components->component_is, components->component_len, sizeof(size_t),
-        compare_indeces);
-  for (size_t i = 0; i < components->component_len; i++) {
-    circuit_del_component(circuit_component, components->component_is[i]);
+// NOTE: does not free
+void circuit_remove_group(const Component circuit_component[static 1],
+                          ComponentGroup group[static 1]) {
+  Circuit *circuit = (Circuit *)circuit_component->ptr;
+
+  size_t *indexes = (size_t *)malloc(sizeof(size_t) * group->len);
+  puts("------------------------------------------");
+  puts("Deleting the Following:");
+  for (size_t i = 0; i < group->len; i++) {
+    indexes[i] = circuit_get_i_from_id(circuit, group->ids[i]);
+    printf("%p\n", &circuit->components[indexes[i]]);
+  }
+  puts("------------------------------------------");
+  qsort(indexes, group->len, sizeof(size_t), compare_indeces);
+
+  for (size_t i = 0; i < group->len; i++) {
+    circuit_remove_component(circuit_component, indexes[i]);
   }
 }
 
@@ -120,21 +150,24 @@ void circuit_place(Component circuit_component[static 1], Vector2 grid_pos) {
 }
 
 void circuit_render(const Component circuit_component[static 1]) {
-  // TODO: implement abstracted drawing
+  // TODO: review
 
   Circuit *circuit = (Circuit *)circuit_component->ptr;
-  // for (size_t i = 0; i < circuit->components_len; i++) {
-  //   // printf("Rendered %zu:\n", i);
-  //   // TODO: fix first element not rendering
-  //   COMPONENT_FN(circuit->components[i], render);
-  // }
+#define CIRCUIT_RECT_BORDER_WIDTH 2.5
+  Rectangle smaller_rect = (Rectangle){
+      circuit->rect.x + (CIRCUIT_RECT_BORDER_WIDTH / 2),
+      circuit->rect.y + (CIRCUIT_RECT_BORDER_WIDTH / 2),
+      circuit->rect.width - 2.5,
+      circuit->rect.height - 2.5,
+  };
+  DrawRectangleRounded(circuit->rect, 5, 30, FG_COLOUR);
+  DrawRectangleRounded(smaller_rect, 5, 30, BG_COLOUR);
 }
 
 // render_run
 
 bool circuit_is_hovered(const Component circuit_component[static 1]) {
   Circuit *circuit = (Circuit *)circuit_component->ptr;
-
   return CheckCollisionPointRec(GetMousePosition(), circuit->rect);
 }
 

@@ -43,8 +43,8 @@ void wire_free(Component wire_component[static 1]);
 
 // Action Functions
 void wire_save(const Component wire_component[static 1], const char *path);
-void wire_run(const Component wire_component[static 1]);
-void wire_place(Component wire_component[static 1], Vector2 grid_pos);
+void wire_run(Component wire_component[static 1]);
+void wire_place(Component wire_component[static 1], Vector2 _);
 
 // Rendering
 void wire_render(const Component wire_component[static 1]);

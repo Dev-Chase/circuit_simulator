@@ -17,16 +17,15 @@ static bool select_action_shortcut(void) {
 }
 
 static void select_hovered(Simulation simulation[static 1]) {
-  if (simulation->hovered.component_len > 0) {
+  if (simulation->hovered.len > 0) {
     // component_group_clear(&simulation->selected);
-    for (size_t i = 0; i < simulation->hovered.component_len; i++) {
+    for (size_t i = 0; i < simulation->hovered.len; i++) {
       if (component_group_contains(&simulation->removing,
-                                   simulation->hovered.component_is[i])) {
+                                   simulation->hovered.ids[i])) {
         component_group_remove(&simulation->selected,
-                               simulation->hovered.component_is[i]);
+                               simulation->hovered.ids[i]);
       } else {
-        component_group_add(&simulation->selected,
-                            simulation->hovered.component_is[i]);
+        component_group_add(&simulation->selected, simulation->hovered.ids[i]);
       }
     }
   }
@@ -49,21 +48,27 @@ static void select_action_active_update(Simulation simulation[static 1],
             sim_circuit->components[i], collides_rect,
             RECT(top_left.x, top_left.y, fabsf(mouse_pos.x - start_mouse_pos.x),
                  fabsf(mouse_pos.y - start_mouse_pos.y)))) {
-      component_group_add(&simulation->hovered, i);
-      if (component_group_contains(&simulation->selected, i)) {
-        component_group_add(&simulation->removing, i);
+      component_group_add(&simulation->hovered, sim_circuit->components[i].id);
+      if (component_group_contains(&simulation->selected,
+                                   sim_circuit->components[i].id)) {
+        component_group_add(&simulation->removing,
+                            sim_circuit->components[i].id);
       }
     }
   }
 }
 
 static void select_action_inactive_update(Simulation simulation[static 1]) {
+  Circuit *sim_circuit = (Circuit *)simulation->circuit.ptr;
   if (simulation->hovered_i != SIZE_T_MAX) {
-    component_group_add(&simulation->hovered, simulation->hovered_i);
-    if (component_group_contains(&simulation->selected,
-                                 simulation->hovered_i) &&
+    component_group_add(&simulation->hovered,
+                        sim_circuit->components[simulation->hovered_i].id);
+    if (component_group_contains(
+            &simulation->selected,
+            sim_circuit->components[simulation->hovered_i].id) &&
         (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))) {
-      component_group_add(&simulation->removing, simulation->hovered_i);
+      component_group_add(&simulation->removing,
+                          sim_circuit->components[simulation->hovered_i].id);
     }
   }
 
@@ -72,10 +77,10 @@ static void select_action_inactive_update(Simulation simulation[static 1]) {
       CheckCollisionPointRec(CLOSEST_VALID_GRID_VEC_FROM_MOUSE_POS,
                              SIMULATION_AREA_RECT)) {
     if (component_group_contains(&simulation->removing,
-                                 simulation->hovered_i)) {
-      component_group_remove(&simulation->selected, simulation->hovered_i);
+                                 sim_circuit->components[simulation->hovered_i].id)) {
+      component_group_remove(&simulation->selected, sim_circuit->components[simulation->hovered_i].id);
     } else {
-      component_group_add(&simulation->selected, simulation->hovered_i);
+      component_group_add(&simulation->selected, sim_circuit->components[simulation->hovered_i].id);
     }
   }
 }

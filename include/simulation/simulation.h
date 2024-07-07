@@ -4,6 +4,7 @@
 #include "action.h"
 #include "component.h"
 #include "component_group.h"
+#include "undo_list.h"
 #ifdef _cplusplus
 extern "C" {
 #endif
@@ -15,18 +16,20 @@ extern "C" {
 
 // Simulation Actions
 // #define N_ACTIONS 7
-#define N_ACTIONS 5
+#define N_ACTIONS 6
 Action *new_action_init(void);
 Action *run_action_init(void);
 Action *place_action_init(void);
 Action *delete_action_init(void);
 Action *select_action_init(void);
-// Action *import_action_init(void);
+Action *undo_action_init(void);
 // Action *save_action_init(void);
+// Action *import_action_init(void);
 
 typedef struct Simulation {
   Action *actions[N_ACTIONS];
   Component circuit;
+  UndoList undo_list;
   size_t hovered_i;
   ComponentGroup hovered;
   ComponentGroup selected;

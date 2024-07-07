@@ -1,18 +1,13 @@
 #ifndef COMPONENT_I_H
 #define COMPONENT_I_H
 
+#include "component_io_pins.h"
 #include "raylib.h"
 #include <stddef.h>
+#include <uuid/uuid.h>
 #ifdef _cplusplus
 extern "C" {
 #endif
-
-typedef struct ComponentPoint {
-  Vector2 grid_pos;
-  float volt;
-  float amp;
-  float res;
-} ComponentPoint;
 
 typedef struct Component Component;
 // typedef void (*ComponentRunFn)(Component *self);
@@ -30,7 +25,7 @@ typedef struct Component {
 
   // Action Functions
   void (*save)(const Component *const SELF, const char *path);
-  void (*run)(const Component *self); // sets ends
+  void (*run)(Component *self); // sets ends
   void (*place)(Component *self, Vector2 grid_pos);
 
   // Rendering
@@ -41,8 +36,8 @@ typedef struct Component {
   // Information
   bool (*is_hovered)(const Component *const SELF);
   bool (*collides_rect)(const Component *const SELF, Rectangle rect);
-
-  ComponentPoint *ends;
+  ComponentIOPins pins;
+  uuid_t id;
 } Component;
 
 #ifndef NDEBUG
